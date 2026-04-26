@@ -5,12 +5,9 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
     name: 'Prism',
-    description: 'A clean new-tab extension with bookmarks, AI, and ambient radio.',
+    description: 'A clean new-tab extension with bookmarks and ambient radio.',
     permissions: ['bookmarks', 'favicon'],
     host_permissions: [
-      'https://generativelanguage.googleapis.com/*',
-      // External links for fallback music source.
-      'https://www.youtube.com/*',
       // SomaFM stream endpoints for in-widget audio playback.
       'https://ice1.somafm.com/*',
       'https://ice2.somafm.com/*',

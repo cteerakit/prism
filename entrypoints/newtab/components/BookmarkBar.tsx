@@ -287,7 +287,7 @@ function BookmarkFolder({
     (inMenu
       ? 'flex w-full max-w-none items-center justify-between gap-2 '
       : 'inline-flex max-w-[12rem] shrink-0 items-center ') +
-    'gap-0.5 truncate rounded-md px-2 py-1 text-left text-sm text-slate-100/90 transition hover:bg-white/15 hover:shadow-glass-edge';
+    'gap-0.5 truncate rounded-md px-2 py-1 text-left text-sm text-slate-100/90 transition hover:bg-white/15';
 
   const menuPanel =
     open && node.children?.length ? (
@@ -358,7 +358,7 @@ function BookmarkBarItem({
 
   if (node.url) {
     const base =
-      'truncate rounded-md px-2 py-1 text-sm text-slate-100/90 transition hover:bg-white/15 hover:shadow-glass-edge';
+      'truncate rounded-md px-2 py-1 text-sm text-slate-100/90 transition hover:bg-white/15';
     if (inMenu) {
       return (
         <BookmarkLink

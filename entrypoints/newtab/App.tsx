@@ -1,18 +1,10 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import type { LucideIcon } from 'lucide-react';
 import {
-  AudioWaveform,
   Bookmark,
-  Bird,
   CalendarClock,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  CloudLightning,
-  CloudRain,
-  Coffee,
-  Flame,
-  Headphones,
   ImagePlus,
   ListTodo,
   Maximize2,
@@ -24,9 +16,7 @@ import {
   Settings2,
   Sparkles,
   Timer,
-  Trees,
   Trash2,
-  Wind,
   X,
 } from 'lucide-react';
 import type { CSSProperties } from 'react';
@@ -47,603 +37,74 @@ import {
 } from './chromeGlass';
 import { BookmarkBar } from './components/BookmarkBar';
 import { GlassCard } from './components/GlassCard';
-
-type Position = {
-  x: number;
-  y: number;
-};
-type CardContextMenuState = {
-  cardId: CardId;
-  x: number;
-  y: number;
-};
-type WallpaperContextMenuState = {
-  x: number;
-  y: number;
-};
-type ClockContextMenuState = {
-  x: number;
-  y: number;
-};
-
-type CardId = 'timer' | 'countdown' | 'todos' | 'audio' | 'music' | 'note' | 'bookmarks';
-type PreferenceId =
-  | 'showBackgroundDimmer'
-  | 'showBackgroundBlur'
-  | 'showCenterTime'
-  | 'showCenterDate'
-  | 'use24HourTime'
-  | 'showAmPm'
-  | 'showBookmarkBar';
-type BackgroundId =
-  | 'ios-blue'
-  | 'ios-purple'
-  | 'ios-indigo'
-  | 'ios-sunrise'
-  | 'ios-midnight'
-  | 'ios-light'
-  | 'custom';
-type CustomWallpaperMeta = {
-  url: string;
-};
-type ThemeId = 'cyan' | 'violet' | 'emerald' | 'rose' | 'amber' | 'indigo' | 'teal' | 'fuchsia';
-type ThemeOption = {
-  id: ThemeId;
-  name: string;
-  accent: string;
-  accentSoftBg: string;
-  accentSoftBorder: string;
-  accentText: string;
-};
-type PomodoroPhase = 'focus' | 'break';
-type PomodoroSnapshot = {
-  phase: PomodoroPhase;
-  secondsLeft: number;
-  isRunning: boolean;
-  completedPomodoros: number;
-  lastUpdatedAt: number;
-};
-type TodoItem = {
-  id: string;
-  text: string;
-  completed: boolean;
-  createdAt: number;
-};
-type AmbientChannelId = 'rain' | 'cafe' | 'lofi' | 'wind' | 'fireplace' | 'forest' | 'thunder' | 'birds' | 'whiteNoise';
-type AmbientMixerEnabled = Record<AmbientChannelId, boolean>;
-
-const CARD_POSITIONS_STORAGE_KEY = 'newtab-card-positions';
-const VISIBLE_CARDS_STORAGE_KEY = 'newtab-visible-cards';
-const VISIBLE_DOCK_ITEMS_STORAGE_KEY = 'newtab-visible-dock-items';
-const SELECTED_BACKGROUND_STORAGE_KEY = 'newtab-selected-background';
-const SELECTED_THEME_STORAGE_KEY = 'newtab-selected-theme';
-const POMODORO_STORAGE_KEY = 'newtab-pomodoro-state';
-const QUICK_NOTE_STORAGE_KEY = 'newtab-quick-note';
-const TODO_LIST_STORAGE_KEY = 'newtab-todo-list';
-const COUNTDOWN_TARGET_STORAGE_KEY = 'newtab-countdown-target';
-const AMBIENT_MIXER_ENABLED_STORAGE_KEY = 'newtab-ambient-mixer-enabled';
-const PREFERENCES_STORAGE_KEY = 'newtab-preferences';
-const CLOCK_SIZE_STORAGE_KEY = 'newtab-clock-size';
-const CLOCK_POSITION_STORAGE_KEY = 'newtab-clock-position';
-
-type ClockSize = 'small' | 'medium' | 'large';
-type ClockPosition =
-  | 'top-left'
-  | 'top'
-  | 'top-right'
-  | 'left'
-  | 'center'
-  | 'right'
-  | 'bottom-left'
-  | 'bottom'
-  | 'bottom-right';
-
-const CLOCK_POSITIONS: ClockPosition[] = [
-  'top-left',
-  'top',
-  'top-right',
-  'left',
-  'center',
-  'right',
-  'bottom-left',
-  'bottom',
-  'bottom-right',
-];
-
-const CLOCK_POSITION_LABELS: Record<ClockPosition, string> = {
-  'top-left': 'Top left',
-  top: 'Top',
-  'top-right': 'Top right',
-  left: 'Left',
-  center: 'Center',
-  right: 'Right',
-  'bottom-left': 'Bottom left',
-  bottom: 'Bottom',
-  'bottom-right': 'Bottom right',
-};
-const CUSTOM_WALLPAPER_META_STORAGE_KEY = 'newtab-custom-wallpaper-meta';
-const MAX_CUSTOM_WALLPAPER_DATA_URL_LENGTH = 3_500_000;
-
-function loadCustomWallpaperFromStorage(): CustomWallpaperMeta | null {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(CUSTOM_WALLPAPER_META_STORAGE_KEY);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as CustomWallpaperMeta;
-    if (typeof parsed.url !== 'string' || !/^(https?:\/\/|data:image\/)/i.test(parsed.url)) return null;
-    return {
-      url: parsed.url,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function defaultPreferences(): Record<PreferenceId, boolean> {
-  return {
-    showBackgroundDimmer: true,
-    showBackgroundBlur: false,
-    showCenterTime: true,
-    showCenterDate: true,
-    use24HourTime: false,
-    showAmPm: false,
-    showBookmarkBar: false,
-  };
-}
-
-function loadStoredPreferences(): Record<PreferenceId, boolean> {
-  const defaults = defaultPreferences();
-  if (typeof window === 'undefined') return defaults;
-  const raw = window.localStorage.getItem(PREFERENCES_STORAGE_KEY);
-  if (!raw) return defaults;
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return {
-      ...defaults,
-      ...Object.fromEntries(
-        (Object.keys(defaults) as PreferenceId[]).map((id) => [
-          id,
-          typeof parsed[id] === 'boolean' ? (parsed[id] as boolean) : defaults[id],
-        ]),
-      ),
-    } as Record<PreferenceId, boolean>;
-  } catch {
-    return defaults;
-  }
-}
-
-function loadStoredClockSize(): ClockSize {
-  if (typeof window === 'undefined') return 'large';
-  const raw = window.localStorage.getItem(CLOCK_SIZE_STORAGE_KEY);
-  if (raw === 'small' || raw === 'medium' || raw === 'large') return raw;
-  return 'large';
-}
-
-function loadStoredClockPosition(): ClockPosition {
-  if (typeof window === 'undefined') return 'center';
-  const raw = window.localStorage.getItem(CLOCK_POSITION_STORAGE_KEY);
-  return CLOCK_POSITIONS.includes(raw as ClockPosition) ? (raw as ClockPosition) : 'center';
-}
-
-function isoToDatetimeLocalValue(iso: string): string {
-  if (!iso.trim()) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-const AMBIENT_SESSION_ACTIVE_STORAGE_KEY = 'newtab-ambient-session-active';
-const AMBIENT_SESSION_OWNER_TAB_STORAGE_KEY = 'newtab-ambient-session-owner-tab';
-const AMBIENT_MASTER_VOLUME_STORAGE_KEY = 'newtab-ambient-master-volume';
-const AMBIENT_AUDIO_BROADCAST_CHANNEL = 'prism-ambient-audio';
-const LOFI_MUSIC_VOLUME_STORAGE_KEY = 'newtab-lofi-music-volume';
-
-type AmbientAudioBroadcastMessage =
-  | { type: 'stop-engine'; tabId: string }
-  | { type: 'ambient-master-volume'; tabId: string; value: number }
-  | { type: 'music-volume'; tabId: string; value: number };
-/** Fixed loudness when a channel is on (no per-channel sliders). */
-const AMBIENT_CHANNEL_LEVEL = 0.72;
-const ambientChannelMeta: Array<{ id: AmbientChannelId; label: string; description: string; Icon: LucideIcon }> = [
-  { id: 'rain', label: 'Rain', description: 'Filtered noise bed for soft rainfall texture.', Icon: CloudRain },
-  { id: 'cafe', label: 'Cafe', description: 'Warm mid-band room murmur and chatter feel.', Icon: Coffee },
-  { id: 'lofi', label: 'Lo-fi', description: 'Gentle layered tones for a calm study vibe.', Icon: Headphones },
-  { id: 'wind', label: 'Wind', description: 'Low airy whoosh with smooth movement.', Icon: Wind },
-  { id: 'fireplace', label: 'Fireplace', description: 'Warm crackle-like band noise layer.', Icon: Flame },
-  { id: 'forest', label: 'Forest', description: 'Soft rustling highs with woodland depth.', Icon: Trees },
-  { id: 'thunder', label: 'Thunder', description: 'Distant low rumbles with occasional emphasis.', Icon: CloudLightning },
-  { id: 'birds', label: 'Birds', description: 'Light chirps and calls in sparse patterns.', Icon: Bird },
-  { id: 'whiteNoise', label: 'White noise', description: 'Even full-spectrum hiss for masking.', Icon: AudioWaveform },
-];
-const themeOptions: ThemeOption[] = [
-  {
-    id: 'cyan',
-    name: 'Cyan',
-    accent: '#22d3ee',
-    accentSoftBg: 'rgba(34, 211, 238, 0.22)',
-    accentSoftBorder: 'rgba(165, 243, 252, 0.75)',
-    accentText: '#cffafe',
-  },
-  {
-    id: 'violet',
-    name: 'Violet',
-    accent: '#a78bfa',
-    accentSoftBg: 'rgba(167, 139, 250, 0.24)',
-    accentSoftBorder: 'rgba(221, 214, 254, 0.78)',
-    accentText: '#ede9fe',
-  },
-  {
-    id: 'emerald',
-    name: 'Emerald',
-    accent: '#34d399',
-    accentSoftBg: 'rgba(52, 211, 153, 0.22)',
-    accentSoftBorder: 'rgba(167, 243, 208, 0.75)',
-    accentText: '#d1fae5',
-  },
-  {
-    id: 'rose',
-    name: 'Rose',
-    accent: '#fb7185',
-    accentSoftBg: 'rgba(251, 113, 133, 0.22)',
-    accentSoftBorder: 'rgba(254, 205, 211, 0.75)',
-    accentText: '#ffe4e6',
-  },
-  {
-    id: 'amber',
-    name: 'Amber',
-    accent: '#f59e0b',
-    accentSoftBg: 'rgba(245, 158, 11, 0.22)',
-    accentSoftBorder: 'rgba(253, 230, 138, 0.75)',
-    accentText: '#fef3c7',
-  },
-  {
-    id: 'indigo',
-    name: 'Indigo',
-    accent: '#6366f1',
-    accentSoftBg: 'rgba(99, 102, 241, 0.22)',
-    accentSoftBorder: 'rgba(199, 210, 254, 0.78)',
-    accentText: '#e0e7ff',
-  },
-  {
-    id: 'teal',
-    name: 'Teal',
-    accent: '#14b8a6',
-    accentSoftBg: 'rgba(20, 184, 166, 0.22)',
-    accentSoftBorder: 'rgba(153, 246, 228, 0.78)',
-    accentText: '#ccfbf1',
-  },
-  {
-    id: 'fuchsia',
-    name: 'Fuchsia',
-    accent: '#d946ef',
-    accentSoftBg: 'rgba(217, 70, 239, 0.22)',
-    accentSoftBorder: 'rgba(245, 208, 254, 0.78)',
-    accentText: '#fae8ff',
-  },
-];
-
-function makeGradientWallpaper(stops: string[]): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">${stops
-    .map((stop, index) => {
-      const pct = Math.round((index / Math.max(stops.length - 1, 1)) * 100);
-      return `<stop offset="${pct}%" stop-color="${stop}"/>`;
-    })
-    .join('')}</linearGradient></defs><rect width="1920" height="1080" fill="url(#g)"/></svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-}
-
-const backgroundOptions: Array<{ id: BackgroundId; name: string; imageUrl: string }> = [
-  {
-    id: 'ios-indigo',
-    name: 'Indigo Horizon',
-    imageUrl: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1920&q=80',
-  },
-  {
-    id: 'ios-blue',
-    name: 'Blue Nebula',
-    imageUrl: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1920&q=80',
-  },
-  {
-    id: 'ios-purple',
-    name: 'Purple Night Sky',
-    imageUrl: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1920&q=80',
-  },
-  {
-    id: 'ios-sunrise',
-    name: 'Golden Sunrise',
-    imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80',
-  },
-  {
-    id: 'ios-midnight',
-    name: 'Midnight Desert',
-    imageUrl: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1920&q=80',
-  },
-  {
-    id: 'ios-light',
-    name: 'iOS Light',
-    imageUrl: makeGradientWallpaper(['#f8fafc', '#e2e8f0', '#cbd5e1']),
-  },
-];
-
-const defaultCardPositions: Record<CardId, Position> = {
-  timer: { x: 0, y: 0 },
-  countdown: { x: 0, y: 0 },
-  todos: { x: 0, y: 0 },
-  audio: { x: 0, y: 0 },
-  music: { x: 0, y: 0 },
-  note: { x: 0, y: 0 },
-  bookmarks: { x: 0, y: 0 },
-};
-
-/** Bounds for persisted drag offsets (prevents corrupt / unbounded values from hiding widgets). */
-const MAX_STORED_DRAG_OFFSET = 6000;
-
-function sanitizePosition(p: Partial<Position> | undefined): Position {
-  const x = typeof p?.x === 'number' && Number.isFinite(p.x) ? p.x : 0;
-  const y = typeof p?.y === 'number' && Number.isFinite(p.y) ? p.y : 0;
-  return {
-    x: Math.max(-MAX_STORED_DRAG_OFFSET, Math.min(MAX_STORED_DRAG_OFFSET, x)),
-    y: Math.max(-MAX_STORED_DRAG_OFFSET, Math.min(MAX_STORED_DRAG_OFFSET, y)),
-  };
-}
-
-function loadStoredCardPositions(): Record<CardId, Position> {
-  if (typeof window === 'undefined') return { ...defaultCardPositions };
-
-  const raw = window.localStorage.getItem(CARD_POSITIONS_STORAGE_KEY);
-  if (!raw) return { ...defaultCardPositions };
-
-  const merged: Record<CardId, Position> = { ...defaultCardPositions };
-  try {
-    const parsed = JSON.parse(raw) as Record<string, unknown>;
-    (Object.keys(merged) as CardId[]).forEach((id) => {
-      const v = parsed[id];
-      if (v && typeof v === 'object' && v !== null && !Array.isArray(v)) {
-        merged[id] = sanitizePosition(v as Partial<Position>);
-      }
-    });
-  } catch {
-    return { ...defaultCardPositions };
-  }
-
-  try {
-    const prev = JSON.parse(raw) as unknown;
-    if (JSON.stringify(prev) !== JSON.stringify(merged)) {
-      window.localStorage.setItem(CARD_POSITIONS_STORAGE_KEY, JSON.stringify(merged));
-    }
-  } catch {
-    window.localStorage.setItem(CARD_POSITIONS_STORAGE_KEY, JSON.stringify(merged));
-  }
-
-  return merged;
-}
-
-const defaultCardVisibility: Record<CardId, boolean> = {
-  timer: false,
-  countdown: false,
-  todos: false,
-  audio: false,
-  music: false,
-  note: false,
-  bookmarks: false,
-};
-const defaultDockItemVisibility: Record<CardId, boolean> = {
-  timer: true,
-  countdown: true,
-  todos: true,
-  audio: true,
-  music: true,
-  note: true,
-  bookmarks: true,
-};
-
-const POMODORO_FOCUS_SECONDS = 25 * 60;
-const POMODORO_BREAK_SECONDS = 5 * 60;
-
-function getPomodoroDuration(phase: PomodoroPhase) {
-  return phase === 'focus' ? POMODORO_FOCUS_SECONDS : POMODORO_BREAK_SECONDS;
-}
-
-function advancePomodoroSnapshot(snapshot: PomodoroSnapshot, nowMs: number): PomodoroSnapshot {
-  if (!snapshot.isRunning) {
-    return {
-      ...snapshot,
-      lastUpdatedAt: nowMs,
-    };
-  }
-
-  let elapsedSeconds = Math.floor((nowMs - snapshot.lastUpdatedAt) / 1000);
-  if (elapsedSeconds <= 0) return snapshot;
-
-  let phase = snapshot.phase;
-  let secondsLeft = snapshot.secondsLeft;
-  let completedPomodoros = snapshot.completedPomodoros;
-
-  while (elapsedSeconds > 0) {
-    if (secondsLeft > elapsedSeconds) {
-      secondsLeft -= elapsedSeconds;
-      elapsedSeconds = 0;
-      continue;
-    }
-
-    elapsedSeconds -= secondsLeft;
-
-    if (phase === 'focus') {
-      completedPomodoros += 1;
-      phase = 'break';
-      secondsLeft = POMODORO_BREAK_SECONDS;
-    } else {
-      phase = 'focus';
-      secondsLeft = POMODORO_FOCUS_SECONDS;
-    }
-  }
-
-  return {
-    phase,
-    secondsLeft,
-    isRunning: snapshot.isRunning,
-    completedPomodoros,
-    lastUpdatedAt: nowMs,
-  };
-}
-
-function loadStoredPomodoroSnapshot(nowMs: number): PomodoroSnapshot | null {
-  if (typeof window === 'undefined') return null;
-
-  const raw = window.localStorage.getItem(POMODORO_STORAGE_KEY);
-  if (!raw) return null;
-
-  try {
-    const parsed = JSON.parse(raw) as PomodoroSnapshot;
-    const hasValidPhase = parsed.phase === 'focus' || parsed.phase === 'break';
-    const hasValidNumbers =
-      Number.isFinite(parsed.secondsLeft) &&
-      Number.isFinite(parsed.completedPomodoros) &&
-      Number.isFinite(parsed.lastUpdatedAt);
-
-    if (!hasValidPhase || !hasValidNumbers) return null;
-
-    return advancePomodoroSnapshot(
-      {
-        phase: parsed.phase,
-        secondsLeft: Math.max(1, Math.floor(parsed.secondsLeft)),
-        isRunning: Boolean(parsed.isRunning),
-        completedPomodoros: Math.max(0, Math.floor(parsed.completedPomodoros)),
-        lastUpdatedAt: Math.floor(parsed.lastUpdatedAt),
-      },
-      nowMs,
-    );
-  } catch {
-    return null;
-  }
-}
-
-function loadStoredTodos(): TodoItem[] {
-  if (typeof window === 'undefined') return [];
-
-  const raw = window.localStorage.getItem(TODO_LIST_STORAGE_KEY);
-  if (!raw) return [];
-
-  try {
-    const parsed = JSON.parse(raw) as TodoItem[];
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .filter((item) => item && typeof item === 'object')
-      .map((item) => ({
-        id: typeof item.id === 'string' ? item.id : crypto.randomUUID(),
-        text: typeof item.text === 'string' ? item.text : '',
-        completed: Boolean(item.completed),
-        createdAt: Number.isFinite(item.createdAt) ? item.createdAt : Date.now(),
-      }))
-      .filter((item) => item.text.trim().length > 0);
-  } catch {
-    return [];
-  }
-}
-
-function loadStoredAmbientSessionActive(): boolean {
-  if (typeof window === 'undefined') return false;
-  const raw = window.localStorage.getItem(AMBIENT_SESSION_ACTIVE_STORAGE_KEY);
-  if (raw === null) return false;
-  return raw === '1' || raw === 'true';
-}
-
-function loadStoredAmbientSessionOwnerTab(): string | null {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(AMBIENT_SESSION_OWNER_TAB_STORAGE_KEY);
-  if (!raw) return null;
-  const trimmed = raw.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function loadStoredAmbientMasterVolume(): number {
-  if (typeof window === 'undefined') return 70;
-  const raw = window.localStorage.getItem(AMBIENT_MASTER_VOLUME_STORAGE_KEY);
-  if (raw === null) return 70;
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return 70;
-  return Math.max(0, Math.min(100, Math.round(n)));
-}
-
-function loadStoredLofiMusicVolume(): number {
-  if (typeof window === 'undefined') return 0.85;
-  const raw = window.localStorage.getItem(LOFI_MUSIC_VOLUME_STORAGE_KEY);
-  if (raw === null) return 0.85;
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return 0.85;
-  return Math.max(0, Math.min(1, n));
-}
-
-function parseAmbientEnabledJson(raw: string | null): AmbientMixerEnabled | null {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Partial<AmbientMixerEnabled>;
-    return {
-      rain: typeof parsed.rain === 'boolean' ? parsed.rain : true,
-      cafe: typeof parsed.cafe === 'boolean' ? parsed.cafe : true,
-      lofi: typeof parsed.lofi === 'boolean' ? parsed.lofi : true,
-      wind: typeof parsed.wind === 'boolean' ? parsed.wind : false,
-      fireplace: typeof parsed.fireplace === 'boolean' ? parsed.fireplace : false,
-      forest: typeof parsed.forest === 'boolean' ? parsed.forest : false,
-      thunder: typeof parsed.thunder === 'boolean' ? parsed.thunder : false,
-      birds: typeof parsed.birds === 'boolean' ? parsed.birds : false,
-      whiteNoise: typeof parsed.whiteNoise === 'boolean' ? parsed.whiteNoise : false,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function loadStoredAmbientEnabled(): AmbientMixerEnabled {
-  if (typeof window === 'undefined') {
-    return { rain: true, cafe: true, lofi: true, wind: false, fireplace: false, forest: false, thunder: false, birds: false, whiteNoise: false };
-  }
-
-  const raw = window.localStorage.getItem(AMBIENT_MIXER_ENABLED_STORAGE_KEY);
-  if (!raw) {
-    return { rain: true, cafe: true, lofi: true, wind: false, fireplace: false, forest: false, thunder: false, birds: false, whiteNoise: false };
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as Partial<AmbientMixerEnabled>;
-    return {
-      rain: typeof parsed.rain === 'boolean' ? parsed.rain : true,
-      cafe: typeof parsed.cafe === 'boolean' ? parsed.cafe : true,
-      lofi: typeof parsed.lofi === 'boolean' ? parsed.lofi : true,
-      wind: typeof parsed.wind === 'boolean' ? parsed.wind : false,
-      fireplace: typeof parsed.fireplace === 'boolean' ? parsed.fireplace : false,
-      forest: typeof parsed.forest === 'boolean' ? parsed.forest : false,
-      thunder: typeof parsed.thunder === 'boolean' ? parsed.thunder : false,
-      birds: typeof parsed.birds === 'boolean' ? parsed.birds : false,
-      whiteNoise: typeof parsed.whiteNoise === 'boolean' ? parsed.whiteNoise : false,
-    };
-  } catch {
-    return { rain: true, cafe: true, lofi: true, wind: false, fireplace: false, forest: false, thunder: false, birds: false, whiteNoise: false };
-  }
-}
-
-function loadStoredCardVisibility(storageKey: string, defaults: Record<CardId, boolean>): Record<CardId, boolean> {
-  if (typeof window === 'undefined') return defaults;
-
-  const raw = window.localStorage.getItem(storageKey);
-  if (!raw) return defaults;
-
-  try {
-    const parsed = JSON.parse(raw) as Partial<Record<CardId, boolean>>;
-    return {
-      timer: typeof parsed.timer === 'boolean' ? parsed.timer : defaults.timer,
-      countdown: typeof parsed.countdown === 'boolean' ? parsed.countdown : defaults.countdown,
-      todos: typeof parsed.todos === 'boolean' ? parsed.todos : defaults.todos,
-      audio: typeof parsed.audio === 'boolean' ? parsed.audio : defaults.audio,
-      music: typeof parsed.music === 'boolean' ? parsed.music : defaults.music,
-      note: typeof parsed.note === 'boolean' ? parsed.note : defaults.note,
-      bookmarks: typeof parsed.bookmarks === 'boolean' ? parsed.bookmarks : defaults.bookmarks,
-    };
-  } catch {
-    return defaults;
-  }
-}
+import { readText, removeKey, writeJson, writeText } from './features/storage';
+import {
+  AMBIENT_AUDIO_BROADCAST_CHANNEL,
+  AMBIENT_CHANNEL_LEVEL,
+  AMBIENT_MASTER_VOLUME_STORAGE_KEY,
+  AMBIENT_MIXER_ENABLED_STORAGE_KEY,
+  AMBIENT_SESSION_ACTIVE_STORAGE_KEY,
+  AMBIENT_SESSION_OWNER_TAB_STORAGE_KEY,
+  CARD_POSITIONS_STORAGE_KEY,
+  CLOCK_POSITIONS,
+  CLOCK_POSITION_STORAGE_KEY,
+  CLOCK_POSITION_LABELS,
+  CLOCK_SIZE_STORAGE_KEY,
+  COUNTDOWN_TARGET_STORAGE_KEY,
+  CUSTOM_WALLPAPER_META_STORAGE_KEY,
+  LOFI_MUSIC_VOLUME_STORAGE_KEY,
+  MAX_CUSTOM_WALLPAPER_DATA_URL_LENGTH,
+  POMODORO_BREAK_SECONDS,
+  POMODORO_FOCUS_SECONDS,
+  POMODORO_STORAGE_KEY,
+  PREFERENCES_STORAGE_KEY,
+  QUICK_NOTE_STORAGE_KEY,
+  SELECTED_BACKGROUND_STORAGE_KEY,
+  SELECTED_THEME_STORAGE_KEY,
+  TODO_LIST_STORAGE_KEY,
+  VISIBLE_CARDS_STORAGE_KEY,
+  VISIBLE_DOCK_ITEMS_STORAGE_KEY,
+  ambientChannelMeta,
+  backgroundOptions,
+  defaultCardPositions,
+  defaultCardVisibility,
+  defaultDockItemVisibility,
+  getPomodoroDuration,
+  isoToDatetimeLocalValue,
+  loadCustomWallpaperFromStorage,
+  loadStoredAmbientEnabled,
+  loadStoredAmbientMasterVolume,
+  loadStoredAmbientSessionActive,
+  loadStoredAmbientSessionOwnerTab,
+  loadStoredCardPositions,
+  loadStoredCardVisibility,
+  loadStoredClockPosition,
+  loadStoredClockSize,
+  loadStoredLofiMusicVolume,
+  loadStoredPomodoroSnapshot,
+  loadStoredPreferences,
+  loadStoredTodos,
+  parseAmbientEnabledJson,
+  sanitizePosition,
+  themeOptions,
+  type AmbientAudioBroadcastMessage,
+  type AmbientMixerEnabled,
+  type BackgroundId,
+  type CardContextMenuState,
+  type CardId,
+  type ClockContextMenuState,
+  type ClockPosition,
+  type ClockSize,
+  type CustomWallpaperMeta,
+  type PomodoroSnapshot,
+  type PomodoroPhase,
+  type Position,
+  type PreferenceId,
+  type ThemeId,
+  type ThemeOption,
+  type TodoItem,
+  type WallpaperContextMenuState,
+} from './features/state';
 
 function SettingToggle({
   label,
@@ -762,7 +223,7 @@ function LofiMusicCard({ theme }: { theme: ThemeOption }) {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(LOFI_MUSIC_VOLUME_STORAGE_KEY, String(volume));
+    writeText(LOFI_MUSIC_VOLUME_STORAGE_KEY, String(volume));
     musicVolumeBroadcastRef.current?.postMessage({
       type: 'music-volume',
       tabId: musicTabIdRef.current,
@@ -852,7 +313,7 @@ function LofiMusicCard({ theme }: { theme: ThemeOption }) {
           <button
             type="button"
             onClick={handlePlay}
-            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition"
+            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition hover:brightness-110 hover:saturate-125 active:brightness-90"
             style={{
               borderColor: theme.accentSoftBorder,
               backgroundColor: theme.accentSoftBg,
@@ -898,21 +359,31 @@ function LofiMusicCard({ theme }: { theme: ThemeOption }) {
               ? 'Now playing.'
               : 'Press Play to start.'}
       </p>
-      <input
-        type="range"
-        min={0}
-        max={1}
-        step={0.01}
-        value={volume}
-        onChange={(event) => {
-          const next = Number(event.target.value);
-          setVolume(next);
-          if (audioRef.current) audioRef.current.volume = next;
-        }}
-        className="w-full"
-        style={{ accentColor: theme.accent }}
-        aria-label="Radio volume"
-      />
+      <label className="flex min-w-0 items-center gap-2">
+        <span className="sr-only">Radio volume</span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={volume}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            setVolume(next);
+            if (audioRef.current) audioRef.current.volume = next;
+          }}
+          className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full border border-white/[0.14] bg-white/[0.08] shadow-inner outline-none transition hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-white/40 dark:bg-black/25"
+          style={
+            {
+              accentColor: theme.accent,
+              '--tw-ring-color': theme.accentSoftBg,
+            } as CSSProperties
+          }
+        />
+        <span className="shrink-0 text-[10px] tabular-nums leading-none text-slate-600 dark:text-slate-300">
+          {Math.round(volume * 100)}%
+        </span>
+      </label>
     </div>
   );
 }
@@ -1140,7 +611,7 @@ export default function App() {
   const [now, setNow] = useState(() => new Date());
   const [selectedBackground, setSelectedBackground] = useState<BackgroundId>(() => {
     if (typeof window === 'undefined') return 'ios-indigo';
-    const raw = window.localStorage.getItem(SELECTED_BACKGROUND_STORAGE_KEY);
+    const raw = readText(SELECTED_BACKGROUND_STORAGE_KEY);
     if (!raw) return 'ios-indigo';
     if (raw === 'custom') {
       return loadCustomWallpaperFromStorage() ? 'custom' : 'ios-indigo';
@@ -1153,7 +624,7 @@ export default function App() {
   const [customWallpaperError, setCustomWallpaperError] = useState<string | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<ThemeId>(() => {
     if (typeof window === 'undefined') return 'cyan';
-    const raw = window.localStorage.getItem(SELECTED_THEME_STORAGE_KEY);
+    const raw = readText(SELECTED_THEME_STORAGE_KEY);
     if (!raw) return 'cyan';
     return themeOptions.some((option) => option.id === raw) ? (raw as ThemeId) : 'cyan';
   });
@@ -1166,13 +637,13 @@ export default function App() {
   const [completedPomodoros, setCompletedPomodoros] = useState(initialPomodoroSnapshot?.completedPomodoros ?? 0);
   const [quickNote, setQuickNote] = useState(() => {
     if (typeof window === 'undefined') return 'Capture a thought, reminder, or idea here.';
-    return window.localStorage.getItem(QUICK_NOTE_STORAGE_KEY) ?? 'Capture a thought, reminder, or idea here.';
+    return readText(QUICK_NOTE_STORAGE_KEY) ?? 'Capture a thought, reminder, or idea here.';
   });
   const [todoItems, setTodoItems] = useState<TodoItem[]>(() => loadStoredTodos());
   const [newTodoText, setNewTodoText] = useState('');
   const [countdownTargetIso, setCountdownTargetIso] = useState(() => {
     if (typeof window === 'undefined') return '';
-    return window.localStorage.getItem(COUNTDOWN_TARGET_STORAGE_KEY) ?? '';
+    return readText(COUNTDOWN_TARGET_STORAGE_KEY) ?? '';
   });
   const [ambientEnabled, setAmbientEnabled] = useState<AmbientMixerEnabled>(() => loadStoredAmbientEnabled());
   const [ambientMasterVolume, setAmbientMasterVolume] = useState(() => loadStoredAmbientMasterVolume());
@@ -1216,30 +687,30 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
+    writeJson(PREFERENCES_STORAGE_KEY, preferences);
   }, [preferences]);
 
   useEffect(() => {
-    window.localStorage.setItem(CLOCK_SIZE_STORAGE_KEY, clockSize);
+    writeText(CLOCK_SIZE_STORAGE_KEY, clockSize);
   }, [clockSize]);
 
   useEffect(() => {
-    window.localStorage.setItem(CLOCK_POSITION_STORAGE_KEY, clockPosition);
+    writeText(CLOCK_POSITION_STORAGE_KEY, clockPosition);
   }, [clockPosition]);
 
   useEffect(() => {
     try {
       if (customWallpaper) {
-        window.localStorage.setItem(CUSTOM_WALLPAPER_META_STORAGE_KEY, JSON.stringify(customWallpaper));
+        writeJson(CUSTOM_WALLPAPER_META_STORAGE_KEY, customWallpaper);
       } else {
-        window.localStorage.removeItem(CUSTOM_WALLPAPER_META_STORAGE_KEY);
+        removeKey(CUSTOM_WALLPAPER_META_STORAGE_KEY);
       }
     } catch {
       // Prevent storage quota errors from crashing the new tab page.
       setCustomWallpaper(null);
       if (selectedBackground === 'custom') {
         setSelectedBackground('ios-indigo');
-        window.localStorage.setItem(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-indigo');
+        writeText(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-indigo');
       }
       setCustomWallpaperError('Could not save this image. Please choose a smaller wallpaper.');
     }
@@ -1267,7 +738,7 @@ export default function App() {
       lastUpdatedAt: Date.now(),
     };
 
-    window.localStorage.setItem(POMODORO_STORAGE_KEY, JSON.stringify(snapshot));
+    writeJson(POMODORO_STORAGE_KEY, snapshot);
   }, [completedPomodoros, isPomodoroRunning, pomodoroPhase, pomodoroSecondsLeft]);
 
   useEffect(() => {
@@ -1355,7 +826,7 @@ export default function App() {
         <button
           type="button"
           onClick={() => setIsPomodoroRunning((prev) => !prev)}
-          className={`${liquidGlassRadiusChip} border px-3 py-1.5 text-xs font-medium text-slate-900 shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed dark:text-slate-100`}
+          className={`${liquidGlassRadiusChip} border px-3 py-1.5 text-xs font-medium text-slate-900 transition hover:brightness-110 hover:saturate-125 active:brightness-90 dark:text-slate-100`}
           style={{
             borderColor: activeTheme.accentSoftBorder,
             backgroundColor: activeTheme.accentSoftBg,
@@ -1750,19 +1221,19 @@ export default function App() {
   }, [isAmbientPlaying, ambientOwnerTabId]);
 
   useEffect(() => {
-    window.localStorage.setItem(AMBIENT_SESSION_ACTIVE_STORAGE_KEY, isAmbientPlaying ? '1' : '0');
+    writeText(AMBIENT_SESSION_ACTIVE_STORAGE_KEY, isAmbientPlaying ? '1' : '0');
     if (!isAmbientPlaying) {
-      window.localStorage.removeItem(AMBIENT_SESSION_OWNER_TAB_STORAGE_KEY);
+      removeKey(AMBIENT_SESSION_OWNER_TAB_STORAGE_KEY);
       setAmbientOwnerTabId(null);
     }
   }, [isAmbientPlaying]);
 
   useEffect(() => {
     if (ambientOwnerTabId) {
-      window.localStorage.setItem(AMBIENT_SESSION_OWNER_TAB_STORAGE_KEY, ambientOwnerTabId);
+      writeText(AMBIENT_SESSION_OWNER_TAB_STORAGE_KEY, ambientOwnerTabId);
       return;
     }
-    window.localStorage.removeItem(AMBIENT_SESSION_OWNER_TAB_STORAGE_KEY);
+    removeKey(AMBIENT_SESSION_OWNER_TAB_STORAGE_KEY);
   }, [ambientOwnerTabId]);
 
   useEffect(() => {
@@ -1770,7 +1241,7 @@ export default function App() {
       suppressAmbientVolumeSyncRef.current = false;
       return;
     }
-    window.localStorage.setItem(AMBIENT_MASTER_VOLUME_STORAGE_KEY, String(ambientMasterVolume));
+    writeText(AMBIENT_MASTER_VOLUME_STORAGE_KEY, String(ambientMasterVolume));
     ambientBroadcastRef.current?.postMessage({
       type: 'ambient-master-volume',
       tabId: ambientTabIdRef.current,
@@ -1835,7 +1306,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={addTodoItem}
-                className={`h-9 ${liquidGlassRadiusChip} border px-3 text-xs font-medium shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed`}
+                className={`h-9 ${liquidGlassRadiusChip} border px-3 text-xs font-medium transition hover:brightness-110 hover:saturate-125 active:brightness-90`}
                 style={{
                   borderColor: activeTheme.accentSoftBorder,
                   backgroundColor: activeTheme.accentSoftBg,
@@ -1865,7 +1336,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => toggleTodoItem(item.id)}
-                      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border border-white/45 shadow-glass-edge transition"
+                      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border border-white/45 transition"
                       style={
                         item.completed
                           ? {
@@ -1891,7 +1362,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => deleteTodoItem(item.id)}
-                      className="rounded-md px-1.5 py-0.5 text-xs text-slate-700/80 transition hover:bg-white/15 hover:text-slate-900 hover:shadow-glass-edge dark:text-slate-200/80 dark:hover:text-slate-100"
+                      className="rounded-md px-1.5 py-0.5 text-xs text-slate-700/80 transition hover:bg-white/15 hover:text-slate-900 dark:text-slate-200/80 dark:hover:text-slate-100"
                       aria-label={`Delete task: ${item.text}`}
                       title="Delete task"
                     >
@@ -1977,7 +1448,7 @@ export default function App() {
                     return next;
                   });
                 }}
-                className={`flex h-10 w-10 shrink-0 items-center justify-center ${liquidGlassRadiusControl} border shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed`}
+                className={`flex h-10 w-10 shrink-0 items-center justify-center ${liquidGlassRadiusControl} border transition hover:brightness-110 hover:saturate-125 active:brightness-90`}
                 style={{
                   borderColor: activeTheme.accentSoftBorder,
                   backgroundColor: activeTheme.accentSoftBg,
@@ -2000,8 +1471,13 @@ export default function App() {
                   max={100}
                   value={ambientMasterVolume}
                   onChange={(event) => applyAmbientMasterVolume(event.target.value, false)}
-                  className="h-6 min-w-0 flex-1"
-                  style={{ accentColor: activeTheme.accent }}
+                  className="h-2 min-w-0 flex-1 cursor-pointer appearance-none rounded-full border border-white/[0.14] bg-white/[0.08] shadow-inner outline-none transition hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-white/40 dark:bg-black/25"
+                  style={
+                    {
+                      accentColor: activeTheme.accent,
+                      '--tw-ring-color': activeTheme.accentSoftBg,
+                    } as CSSProperties
+                  }
                 />
                 <span className="shrink-0 text-[10px] tabular-nums leading-none text-slate-600 dark:text-slate-300">
                   {ambientMasterVolume}%
@@ -2019,7 +1495,7 @@ export default function App() {
                     onClick={() => setAmbientEnabled((prev) => ({ ...prev, [id]: !prev[id] }))}
                     className={`flex h-10 w-10 shrink-0 items-center justify-center border transition ${liquidGlassRadiusControl} ${
                       on
-                        ? 'shadow-glass-edge'
+                        ? 'hover:brightness-110 hover:saturate-125 active:brightness-90'
                         : `${liquidGlassButtonClasses}`
                     }`}
                     style={
@@ -2104,7 +1580,7 @@ export default function App() {
     const safe = sanitizePosition(position);
     setCardPositions((prev) => {
       const next = { ...prev, [cardId]: safe };
-      window.localStorage.setItem(CARD_POSITIONS_STORAGE_KEY, JSON.stringify(next));
+      writeJson(CARD_POSITIONS_STORAGE_KEY, next);
       return next;
     });
   };
@@ -2161,6 +1637,10 @@ export default function App() {
     });
   };
   const openWallpaperContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    if (isSettingsOpen) {
+      event.preventDefault();
+      return;
+    }
     const target = event.target;
     if (target instanceof Element && target.closest('[data-widget-card="true"]')) return;
     event.preventDefault();
@@ -2224,7 +1704,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(QUICK_NOTE_STORAGE_KEY, quickNote);
+    writeText(QUICK_NOTE_STORAGE_KEY, quickNote);
   }, [quickNote]);
 
   useEffect(() => {
@@ -2238,19 +1718,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(TODO_LIST_STORAGE_KEY, JSON.stringify(todoItems));
+    writeJson(TODO_LIST_STORAGE_KEY, todoItems);
   }, [todoItems]);
 
   useEffect(() => {
-    window.localStorage.setItem(COUNTDOWN_TARGET_STORAGE_KEY, countdownTargetIso);
+    writeText(COUNTDOWN_TARGET_STORAGE_KEY, countdownTargetIso);
   }, [countdownTargetIso]);
 
   useEffect(() => {
-    window.localStorage.setItem(VISIBLE_CARDS_STORAGE_KEY, JSON.stringify(visibleCards));
+    writeJson(VISIBLE_CARDS_STORAGE_KEY, visibleCards);
   }, [visibleCards]);
 
   useEffect(() => {
-    window.localStorage.setItem(VISIBLE_DOCK_ITEMS_STORAGE_KEY, JSON.stringify(visibleDockItems));
+    writeJson(VISIBLE_DOCK_ITEMS_STORAGE_KEY, visibleDockItems);
   }, [visibleDockItems]);
 
   useEffect(() => {
@@ -2272,7 +1752,7 @@ export default function App() {
   }, [ambientMasterVolume]);
 
   useEffect(() => {
-    window.localStorage.setItem(AMBIENT_MIXER_ENABLED_STORAGE_KEY, JSON.stringify(ambientEnabled));
+    writeJson(AMBIENT_MIXER_ENABLED_STORAGE_KEY, ambientEnabled);
     if (isAmbientPlaying) updateMixerGains();
   }, [ambientEnabled, isAmbientPlaying]);
 
@@ -2408,6 +1888,16 @@ export default function App() {
       top: Math.max(margin, top),
     };
   }, [clockContextMenu]);
+  const contextMenuShellClasses = `fixed z-[80] min-w-56 overflow-hidden p-1.5 ${liquidGlassRadiusControl} ${liquidGlassPopoverClasses}`;
+  const contextMenuTitleClasses = 'px-2 py-1.5 text-[11px] uppercase tracking-[0.12em] text-slate-300/80';
+  const contextMenuItemBaseClasses =
+    'flex w-full items-center justify-between rounded-lg border border-transparent bg-transparent px-2.5 py-2 text-left text-sm shadow-none transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-0';
+  const contextMenuItemClasses =
+    `${contextMenuItemBaseClasses} text-slate-100 hover:border-white/20 hover:bg-white/[0.16] active:bg-white/[0.12]`;
+  const contextMenuItemCheckedClasses = 'bg-white/[0.08] text-slate-50';
+  const contextMenuDangerItemClasses =
+    `${contextMenuItemBaseClasses} text-rose-200 hover:border-rose-300/25 hover:bg-rose-500/20 active:bg-rose-500/15`;
+  const contextMenuIndicatorClasses = `ml-3 inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-[10px] font-semibold leading-none ${liquidGlassThinClasses}`;
 
   const shouldShowDock = isDockVisible || isDockHovered || isSettingsOpen;
   const toggleFullscreen = async () => {
@@ -2461,7 +1951,7 @@ export default function App() {
       setCustomWallpaperError(null);
       setCustomWallpaper({ url: result });
       setSelectedBackground('custom');
-      window.localStorage.setItem(SELECTED_BACKGROUND_STORAGE_KEY, 'custom');
+      writeText(SELECTED_BACKGROUND_STORAGE_KEY, 'custom');
       event.target.value = '';
     };
     reader.onerror = () => {
@@ -2476,7 +1966,7 @@ export default function App() {
     setCustomWallpaperError(null);
     if (selectedBackground === 'custom') {
       setSelectedBackground('ios-indigo');
-      window.localStorage.setItem(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-indigo');
+      writeText(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-indigo');
     }
   }, [selectedBackground]);
   const formattedTime = useMemo(() => {
@@ -2517,20 +2007,21 @@ export default function App() {
 
   const clockPositionContainerClass = useMemo(() => {
     const base = 'pointer-events-none fixed inset-0 z-0 flex';
-    const topBar =
+    const topOffset =
       preferences.showBookmarkBar && (clockPosition === 'top-left' || clockPosition === 'top' || clockPosition === 'top-right')
-        ? 'pt-14 sm:pt-16'
-        : '';
+        ? 'pt-16 sm:pt-20'
+        : 'pt-8 sm:pt-10';
     const edge = 'px-6 py-6 sm:px-8 sm:py-8';
+    const topEdge = 'px-6 pb-6 sm:px-8 sm:pb-8';
     const bottomClear = 'pb-24 sm:pb-28';
 
     switch (clockPosition) {
       case 'top-left':
-        return `${base} items-start justify-start ${edge} ${topBar}`;
+        return `${base} items-start justify-start ${topEdge} ${topOffset}`;
       case 'top':
-        return `${base} items-start justify-center ${edge} ${topBar}`;
+        return `${base} items-start justify-center ${topEdge} ${topOffset}`;
       case 'top-right':
-        return `${base} items-start justify-end ${edge} ${topBar}`;
+        return `${base} items-start justify-end ${topEdge} ${topOffset}`;
       case 'left':
         return `${base} items-center justify-start ${edge}`;
       case 'center':
@@ -2644,15 +2135,11 @@ export default function App() {
                 className={`pointer-events-auto flex flex-col ${clockStackAlignClass} ${clockDisplayClasses.gap}`}
                 onContextMenu={openClockContextMenu}
               >
-                <p
-                  className={`select-none font-semibold tracking-tight text-slate-100/95 drop-shadow-[0_3px_20px_rgba(0,0,0,0.45)] ${clockDisplayClasses.time}`}
-                >
+                <p className={`select-none font-semibold tracking-tight text-slate-100/95 ${clockDisplayClasses.time}`}>
                   {formattedTime}
                 </p>
                 {preferences.showCenterDate ? (
-                  <p
-                    className={`select-none font-medium tracking-wide text-slate-100/85 drop-shadow-[0_2px_14px_rgba(0,0,0,0.35)] ${clockDisplayClasses.date}`}
-                  >
+                  <p className={`select-none font-medium tracking-wide text-slate-100/85 ${clockDisplayClasses.date}`}>
                     {formattedDate}
                   </p>
                 ) : null}
@@ -2706,7 +2193,7 @@ export default function App() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.18, ease: 'easeOut' }}
-                  className="fixed inset-0 z-[29] cursor-default border-0 bg-slate-950/35 p-0"
+                  className="fixed inset-0 z-[29] cursor-default border-0 bg-black/45 p-0"
                   aria-label="Close settings"
                   onClick={() => setIsSettingsOpen(false)}
                 />
@@ -2763,7 +2250,7 @@ export default function App() {
                               type="button"
                               onClick={() => {
                                 setSelectedTheme(theme.id);
-                                window.localStorage.setItem(SELECTED_THEME_STORAGE_KEY, theme.id);
+                                writeText(SELECTED_THEME_STORAGE_KEY, theme.id);
                               }}
                               className={`px-2 py-2 text-left text-xs ${liquidGlassRadiusControl} ${liquidGlassButtonClasses}`}
                               style={{
@@ -2793,7 +2280,7 @@ export default function App() {
                               type="button"
                               onClick={() => {
                                 setSelectedBackground(background.id);
-                                window.localStorage.setItem(SELECTED_BACKGROUND_STORAGE_KEY, background.id);
+                                writeText(SELECTED_BACKGROUND_STORAGE_KEY, background.id);
                               }}
                               className={`overflow-hidden ${liquidGlassRadiusControl} ${liquidGlassButtonClasses}`}
                               style={isActive ? { borderColor: activeTheme.accentSoftBorder, boxShadow: `0 0 0 1px ${activeTheme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45)` } : undefined}
@@ -2814,7 +2301,7 @@ export default function App() {
                           onClick={() => {
                             if (!customWallpaper) return;
                             setSelectedBackground('custom');
-                            window.localStorage.setItem(SELECTED_BACKGROUND_STORAGE_KEY, 'custom');
+                            writeText(SELECTED_BACKGROUND_STORAGE_KEY, 'custom');
                           }}
                           className={`overflow-hidden ${liquidGlassRadiusControl} ${liquidGlassButtonClasses}`}
                           style={
@@ -3055,7 +2542,7 @@ export default function App() {
                       onClick={() => toggleCard(card.id)}
                       className={`flex min-w-[4.75rem] flex-col items-center justify-center gap-1.5 px-2.5 py-2.5 ${liquidGlassRadiusChip} ${
                         dockHasHorizontalOverflow ? 'shrink-0' : 'min-w-0 flex-1 basis-0'
-                      } ${isVisible ? 'border shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed' : `text-slate-200/85 ${liquidGlassButtonClasses}`}`}
+                      } ${isVisible ? 'border transition hover:brightness-110 hover:saturate-125 active:brightness-90' : `text-slate-200/85 ${liquidGlassButtonClasses}`}`}
                       style={
                         isVisible
                           ? {
@@ -3084,7 +2571,7 @@ export default function App() {
                   onClick={() => setIsSettingsOpen((prev) => !prev)}
                   className={`flex min-w-[4.75rem] flex-col items-center justify-center gap-1.5 px-2.5 py-2.5 ${liquidGlassRadiusChip} ${
                     dockHasHorizontalOverflow ? 'shrink-0' : 'min-w-0 flex-1 basis-0'
-                  } ${isSettingsOpen ? 'border shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed' : `text-slate-200/85 ${liquidGlassButtonClasses}`}`}
+                  } ${isSettingsOpen ? 'border transition hover:brightness-110 hover:saturate-125 active:brightness-90' : `text-slate-200/85 ${liquidGlassButtonClasses}`}`}
                   style={
                     isSettingsOpen
                       ? {
@@ -3110,7 +2597,7 @@ export default function App() {
                   onClick={toggleFullscreen}
                   className={`flex min-w-[4.75rem] flex-col items-center justify-center gap-1.5 px-2.5 py-2.5 ${liquidGlassRadiusChip} ${
                     dockHasHorizontalOverflow ? 'shrink-0' : 'min-w-0 flex-1 basis-0'
-                  } ${isFullscreen ? 'border shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed' : `text-slate-200/85 ${liquidGlassButtonClasses}`}`}
+                  } ${isFullscreen ? 'border transition hover:brightness-110 hover:saturate-125 active:brightness-90' : `text-slate-200/85 ${liquidGlassButtonClasses}`}`}
                   style={
                     isFullscreen
                       ? {
@@ -3159,10 +2646,10 @@ export default function App() {
               ref={cardContextMenuRef}
               role="menu"
               aria-label={`${contextMenuCard.dockLabel} options`}
-              className={`fixed z-[80] min-w-56 overflow-hidden p-1.5 ${liquidGlassRadiusControl} ${liquidGlassPopoverClasses}`}
+              className={contextMenuShellClasses}
               style={{ left: contextMenuPosition.left, top: contextMenuPosition.top }}
             >
-              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wide text-slate-300/80">{contextMenuCard.dockLabel}</div>
+              <div className={contextMenuTitleClasses}>{contextMenuCard.dockLabel}</div>
               <button
                 type="button"
                 role="menuitem"
@@ -3170,7 +2657,7 @@ export default function App() {
                   bringCardToFront(contextMenuCard.id);
                   setCardContextMenu(null);
                 }}
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+                className={contextMenuItemClasses}
               >
                 Bring to front
               </button>
@@ -3181,7 +2668,7 @@ export default function App() {
                   resetCardPosition(contextMenuCard.id);
                   setCardContextMenu(null);
                 }}
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+                className={contextMenuItemClasses}
               >
                 Reset position
               </button>
@@ -3192,7 +2679,7 @@ export default function App() {
                   closeCard(contextMenuCard.id);
                   setCardContextMenu(null);
                 }}
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-rose-200 transition hover:bg-rose-500/20 hover:shadow-glass-edge"
+                className={contextMenuDangerItemClasses}
               >
                 Close
               </button>
@@ -3206,15 +2693,15 @@ export default function App() {
               ref={wallpaperContextMenuRef}
               role="menu"
               aria-label="Wallpaper options"
-              className={`fixed z-[80] min-w-56 overflow-hidden p-1.5 ${liquidGlassRadiusControl} ${liquidGlassPopoverClasses}`}
+              className={contextMenuShellClasses}
               style={{ left: wallpaperContextMenuPosition.left, top: wallpaperContextMenuPosition.top }}
             >
-              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wide text-slate-300/80">Wallpaper</div>
+              <div className={contextMenuTitleClasses}>Wallpaper</div>
               <button
                 type="button"
                 role="menuitem"
                 onClick={closeAllWidgets}
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-rose-200 transition hover:bg-rose-500/20 hover:shadow-glass-edge"
+                className={contextMenuDangerItemClasses}
               >
                 Close all widgets
               </button>
@@ -3223,18 +2710,24 @@ export default function App() {
                 role="menuitemcheckbox"
                 aria-checked={preferences.showBackgroundBlur}
                 onClick={() => toggleWallpaperPreference('showBackgroundBlur')}
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+                className={`${contextMenuItemClasses} ${preferences.showBackgroundBlur ? contextMenuItemCheckedClasses : ''}`}
               >
                 <span>{preferences.showBackgroundBlur ? 'Disable blur' : 'Enable blur'}</span>
+                <span className={contextMenuIndicatorClasses} aria-hidden>
+                  {preferences.showBackgroundBlur ? 'ON' : 'OFF'}
+                </span>
               </button>
               <button
                 type="button"
                 role="menuitemcheckbox"
                 aria-checked={preferences.showBackgroundDimmer}
                 onClick={() => toggleWallpaperPreference('showBackgroundDimmer')}
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+                className={`${contextMenuItemClasses} ${preferences.showBackgroundDimmer ? contextMenuItemCheckedClasses : ''}`}
               >
                 <span>{preferences.showBackgroundDimmer ? 'Disable dim background' : 'Enable dim background'}</span>
+                <span className={contextMenuIndicatorClasses} aria-hidden>
+                  {preferences.showBackgroundDimmer ? 'ON' : 'OFF'}
+                </span>
               </button>
             </div>,
             document.body,
@@ -3246,37 +2739,26 @@ export default function App() {
               ref={clockContextMenuRef}
               role="menu"
               aria-label="Clock options"
-              className={`fixed z-[80] min-w-56 overflow-hidden p-1.5 ${liquidGlassRadiusControl} ${liquidGlassPopoverClasses}`}
+              className={contextMenuShellClasses}
               style={{ left: clockContextMenuPosition.left, top: clockContextMenuPosition.top }}
             >
-              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wide text-slate-300/80">Clock</div>
+              <div className={contextMenuTitleClasses}>Clock</div>
               <button
                 type="button"
-                role="menuitemradio"
-                aria-checked={!preferences.use24HourTime}
-                onClick={() =>
-                  setPreferences((prev) => ({
-                    ...prev,
-                    use24HourTime: false,
-                  }))
-                }
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
-              >
-                <span>Use 12-hour format</span>
-              </button>
-              <button
-                type="button"
-                role="menuitemradio"
+                role="menuitemcheckbox"
                 aria-checked={preferences.use24HourTime}
                 onClick={() =>
                   setPreferences((prev) => ({
                     ...prev,
-                    use24HourTime: true,
+                    use24HourTime: !prev.use24HourTime,
                   }))
                 }
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+                className={`${contextMenuItemClasses} ${preferences.use24HourTime ? contextMenuItemCheckedClasses : ''}`}
               >
-                <span>Use 24-hour format</span>
+                <span>{preferences.use24HourTime ? 'Switch to 12-hour format' : 'Switch to 24-hour format'}</span>
+                <span className={contextMenuIndicatorClasses} aria-hidden>
+                  {preferences.use24HourTime ? '24H' : '12H'}
+                </span>
               </button>
               <button
                 type="button"
@@ -3290,9 +2772,12 @@ export default function App() {
                     showAmPm: !prev.showAmPm,
                   }))
                 }
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:shadow-none"
+                className={`${contextMenuItemClasses} ${preferences.showAmPm ? contextMenuItemCheckedClasses : ''} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:shadow-none`}
               >
                 <span>{preferences.showAmPm ? 'Hide AM/PM' : 'Show AM/PM'}</span>
+                <span className={contextMenuIndicatorClasses} aria-hidden>
+                  {preferences.showAmPm ? 'ON' : 'OFF'}
+                </span>
               </button>
               <button
                 type="button"
@@ -3304,9 +2789,12 @@ export default function App() {
                     showCenterDate: !prev.showCenterDate,
                   }))
                 }
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+                className={`${contextMenuItemClasses} ${preferences.showCenterDate ? contextMenuItemCheckedClasses : ''}`}
               >
                 <span>{preferences.showCenterDate ? 'Hide date' : 'Show date'}</span>
+                <span className={contextMenuIndicatorClasses} aria-hidden>
+                  {preferences.showCenterDate ? 'ON' : 'OFF'}
+                </span>
               </button>
             </div>,
             document.body,

@@ -66,12 +66,12 @@ export const liquidGlassRecessClasses =
  * Compose with `rounded-*` and padding utilities at the call site.
  */
 export const liquidGlassButtonClasses =
-  'border border-white/20 bg-white/10 shadow-sm ' +
+  'border border-white/20 bg-white/10 ' +
   ' relative cursor-pointer transition duration-150 ease-out ' +
-  'hover:bg-white/[0.16] hover:shadow-md ' +
-  'active:bg-white/[0.12] active:shadow-sm ' +
+  'hover:bg-white/[0.16] ' +
+  'active:bg-white/[0.12] ' +
   'disabled:cursor-not-allowed disabled:opacity-50 ' +
-  'disabled:hover:bg-white/10 disabled:hover:shadow-sm ' +
+  'disabled:hover:bg-white/10 ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 focus-visible:ring-offset-0';
 
 /** Square icon button (e.g. settings X close, dock arrows). Same chrome, snug paddings handled at call site. */

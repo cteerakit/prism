@@ -52,3 +52,11 @@ Or create zipped distribution files:
 ```bash
 npm run zip
 ```
+
+## Permissions
+
+Prism requests a minimal set of permissions:
+
+- `bookmarks` - read bookmarks to render the bookmark bar widget.
+- `favicon` - load bookmark favicons using the extension favicon pipeline.
+- `https://ice1.somafm.com/*` and `https://ice2.somafm.com/*` - stream SomaFM audio in the music widget.
