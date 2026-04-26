@@ -24,3 +24,6 @@ web-ext.config.ts
 *.njsproj
 *.sln
 *.sw?
+
+# Keep store/legal document tracked
+!PRIVACY_POLICY.md
