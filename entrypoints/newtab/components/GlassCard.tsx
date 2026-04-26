@@ -110,6 +110,7 @@ export function GlassCard({
   return (
     <motion.div
       ref={cardRef}
+      data-widget-card="true"
       drag
       dragConstraints={dragBoundaryRef}
       dragElastic={0}

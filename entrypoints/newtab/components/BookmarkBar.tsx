@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import { browser as wxtBrowser } from 'wxt/browser';
 import type { Browser } from 'wxt/browser';
 
-import { chromeGlassRadiusBar, chromeGlassSurfaceClasses } from '../chromeGlass';
+import { chromeGlassRadiusBar, chromeGlassSurfaceClasses, liquidGlassRadiusControl } from '../chromeGlass';
 
 type BookmarkNode = Browser.bookmarks.BookmarkTreeNode;
 type BookmarksApi = NonNullable<typeof wxtBrowser.bookmarks>;
@@ -154,8 +154,8 @@ function Separator({ vertical }: { vertical?: boolean }) {
     <span
       className={
         vertical
-          ? 'mx-1 inline-block h-4 w-px shrink-0 bg-white/25'
-          : 'my-1 block h-px bg-white/20'
+          ? 'mx-1 inline-block h-4 w-px shrink-0 bg-white/25 shadow-[1px_0_0_rgba(0,0,0,0.18)]'
+          : 'my-1 block h-px bg-white/20 shadow-[0_1px_0_rgba(0,0,0,0.18)]'
       }
       aria-hidden
     />
@@ -287,14 +287,14 @@ function BookmarkFolder({
     (inMenu
       ? 'flex w-full max-w-none items-center justify-between gap-2 '
       : 'inline-flex max-w-[12rem] shrink-0 items-center ') +
-    'gap-0.5 truncate rounded px-2 py-1 text-left text-sm text-slate-100/90 transition hover:bg-white/15';
+    'gap-0.5 truncate rounded-md px-2 py-1 text-left text-sm text-slate-100/90 transition hover:bg-white/15 hover:shadow-glass-edge';
 
   const menuPanel =
     open && node.children?.length ? (
       <div
         ref={popoverRef}
         data-bookmark-folder-popover=""
-        className={`rounded-xl shadow-lg ${chromeGlassSurfaceClasses} hide-scrollbar overflow-y-auto box-border`}
+        className={`${liquidGlassRadiusControl} ${chromeGlassSurfaceClasses} hide-scrollbar overflow-y-auto box-border`}
         style={{
           ...popoverStyle,
           boxSizing: 'border-box',
@@ -358,7 +358,7 @@ function BookmarkBarItem({
 
   if (node.url) {
     const base =
-      'truncate rounded px-2 py-1 text-sm text-slate-100/90 transition hover:bg-white/15';
+      'truncate rounded-md px-2 py-1 text-sm text-slate-100/90 transition hover:bg-white/15 hover:shadow-glass-edge';
     if (inMenu) {
       return (
         <BookmarkLink

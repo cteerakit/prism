@@ -1,10 +1,9 @@
-import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
 import './styles.css';
+import App from './App';
+import { PRISM_STORAGE_KEY_LIST } from '../shared/prismKeys';
+import { initStorageBridge } from '../shared/storageBridge';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+void initStorageBridge(PRISM_STORAGE_KEY_LIST).finally(() => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(<App />);
+});

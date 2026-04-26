@@ -32,7 +32,19 @@ import {
 import type { CSSProperties } from 'react';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { chromeGlassRadiusBar, chromeGlassRadiusSettings, chromeGlassSurfaceClasses } from './chromeGlass';
+import {
+  chromeGlassRadiusBar,
+  chromeGlassRadiusSettings,
+  chromeGlassSurfaceClasses,
+  liquidGlassButtonClasses,
+  liquidGlassChipClasses,
+  liquidGlassInputClasses,
+  liquidGlassPopoverClasses,
+  liquidGlassRadiusChip,
+  liquidGlassRadiusControl,
+  liquidGlassRecessClasses,
+  liquidGlassThinClasses,
+} from './chromeGlass';
 import { BookmarkBar } from './components/BookmarkBar';
 import { GlassCard } from './components/GlassCard';
 
@@ -45,6 +57,14 @@ type CardContextMenuState = {
   x: number;
   y: number;
 };
+type WallpaperContextMenuState = {
+  x: number;
+  y: number;
+};
+type ClockContextMenuState = {
+  x: number;
+  y: number;
+};
 
 type CardId = 'timer' | 'countdown' | 'todos' | 'audio' | 'music' | 'note' | 'bookmarks';
 type PreferenceId =
@@ -53,6 +73,7 @@ type PreferenceId =
   | 'showCenterTime'
   | 'showCenterDate'
   | 'use24HourTime'
+  | 'showAmPm'
   | 'showBookmarkBar';
 type BackgroundId =
   | 'ios-blue'
@@ -65,7 +86,7 @@ type BackgroundId =
 type CustomWallpaperMeta = {
   url: string;
 };
-type ThemeId = 'cyan' | 'violet' | 'emerald' | 'rose' | 'amber';
+type ThemeId = 'cyan' | 'violet' | 'emerald' | 'rose' | 'amber' | 'indigo' | 'teal' | 'fuchsia';
 type ThemeOption = {
   id: ThemeId;
   name: string;
@@ -141,6 +162,7 @@ const CLOCK_POSITION_LABELS: Record<ClockPosition, string> = {
   'bottom-right': 'Bottom right',
 };
 const CUSTOM_WALLPAPER_META_STORAGE_KEY = 'newtab-custom-wallpaper-meta';
+const MAX_CUSTOM_WALLPAPER_DATA_URL_LENGTH = 3_500_000;
 
 function loadCustomWallpaperFromStorage(): CustomWallpaperMeta | null {
   if (typeof window === 'undefined') return null;
@@ -164,6 +186,7 @@ function defaultPreferences(): Record<PreferenceId, boolean> {
     showCenterTime: true,
     showCenterDate: true,
     use24HourTime: false,
+    showAmPm: false,
     showBookmarkBar: false,
   };
 }
@@ -273,6 +296,30 @@ const themeOptions: ThemeOption[] = [
     accentSoftBorder: 'rgba(253, 230, 138, 0.75)',
     accentText: '#fef3c7',
   },
+  {
+    id: 'indigo',
+    name: 'Indigo',
+    accent: '#6366f1',
+    accentSoftBg: 'rgba(99, 102, 241, 0.22)',
+    accentSoftBorder: 'rgba(199, 210, 254, 0.78)',
+    accentText: '#e0e7ff',
+  },
+  {
+    id: 'teal',
+    name: 'Teal',
+    accent: '#14b8a6',
+    accentSoftBg: 'rgba(20, 184, 166, 0.22)',
+    accentSoftBorder: 'rgba(153, 246, 228, 0.78)',
+    accentText: '#ccfbf1',
+  },
+  {
+    id: 'fuchsia',
+    name: 'Fuchsia',
+    accent: '#d946ef',
+    accentSoftBg: 'rgba(217, 70, 239, 0.22)',
+    accentSoftBorder: 'rgba(245, 208, 254, 0.78)',
+    accentText: '#fae8ff',
+  },
 ];
 
 function makeGradientWallpaper(stops: string[]): string {
@@ -287,29 +334,29 @@ function makeGradientWallpaper(stops: string[]): string {
 
 const backgroundOptions: Array<{ id: BackgroundId; name: string; imageUrl: string }> = [
   {
+    id: 'ios-indigo',
+    name: 'Indigo Horizon',
+    imageUrl: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1920&q=80',
+  },
+  {
     id: 'ios-blue',
-    name: 'iOS Blue',
-    imageUrl: makeGradientWallpaper(['#38bdf8', '#1d4ed8', '#0f172a']),
+    name: 'Blue Nebula',
+    imageUrl: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1920&q=80',
   },
   {
     id: 'ios-purple',
-    name: 'iOS Purple',
-    imageUrl: makeGradientWallpaper(['#c084fc', '#7c3aed', '#312e81']),
-  },
-  {
-    id: 'ios-indigo',
-    name: 'iOS Indigo',
-    imageUrl: makeGradientWallpaper(['#818cf8', '#4f46e5', '#1f2937']),
+    name: 'Purple Night Sky',
+    imageUrl: 'https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1920&q=80',
   },
   {
     id: 'ios-sunrise',
-    name: 'iOS Sunrise',
-    imageUrl: makeGradientWallpaper(['#fb7185', '#f59e0b', '#f8fafc']),
+    name: 'Golden Sunrise',
+    imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80',
   },
   {
     id: 'ios-midnight',
-    name: 'iOS Midnight',
-    imageUrl: makeGradientWallpaper(['#0f172a', '#1e293b', '#0b1120']),
+    name: 'Midnight Desert',
+    imageUrl: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1920&q=80',
   },
   {
     id: 'ios-light',
@@ -620,13 +667,13 @@ function SettingToggle({
       onMouseEnter={(event) => setTipPos({ x: event.clientX, y: event.clientY })}
       onMouseMove={(event) => setTipPos({ x: event.clientX, y: event.clientY })}
       onMouseLeave={() => setTipPos(null)}
-      className="relative flex w-full items-center justify-between gap-3 rounded-xl border border-white/20 bg-white/10 p-3 text-left transition hover:bg-white/15"
+      className={`relative flex w-full items-center justify-between gap-3 p-3 text-left ${liquidGlassRadiusControl} ${liquidGlassButtonClasses}`}
       aria-pressed={enabled}
     >
       {tipPos
         ? createPortal(
             <span
-              className="pointer-events-none fixed z-[100] max-w-[min(18rem,calc(100vw-1.5rem))] rounded-md border border-white/25 bg-black/90 px-2.5 py-1.5 text-left text-[11px] leading-snug text-slate-100 shadow-lg"
+              className={`pointer-events-none fixed z-[100] max-w-[min(18rem,calc(100vw-1.5rem))] rounded-md px-2.5 py-1.5 text-left text-[11px] leading-snug text-slate-100 ${liquidGlassPopoverClasses}`}
               style={{
                 left: tipPos.x + 12,
                 top: tipPos.y + 12,
@@ -643,12 +690,12 @@ function SettingToggle({
       </div>
       <span
         className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition ${
-          enabled ? '' : 'border-white/30 bg-white/10'
+          enabled ? 'shadow-glass-edge-pressed' : `${liquidGlassThinClasses}`
         }`}
         style={enabled ? { borderColor: theme.accentSoftBorder, backgroundColor: theme.accent } : undefined}
       >
         <span
-          className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition ${
+          className={`inline-block h-5 w-5 rounded-full bg-white shadow-glass-edge transition ${
             enabled ? 'translate-x-5' : 'translate-x-0.5'
           }`}
         />
@@ -819,7 +866,7 @@ function LofiMusicCard({ theme }: { theme: ThemeOption }) {
           <button
             type="button"
             onClick={handlePause}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-800 transition hover:bg-white/20 dark:text-slate-100"
+            className={`inline-flex items-center gap-1.5 ${liquidGlassRadiusChip} px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-100 ${liquidGlassButtonClasses}`}
           >
             <Square className="h-3.5 w-3.5" />
             Stop
@@ -828,7 +875,7 @@ function LofiMusicCard({ theme }: { theme: ThemeOption }) {
         <button
           type="button"
           onClick={handleSwitchStation}
-          className="rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-800 transition hover:bg-white/20 dark:text-slate-100"
+          className={`${liquidGlassRadiusChip} px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-100 ${liquidGlassButtonClasses}`}
         >
           Switch Station
         </button>
@@ -836,7 +883,7 @@ function LofiMusicCard({ theme }: { theme: ThemeOption }) {
           <button
             type="button"
             onClick={handleRetry}
-            className="rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-slate-800 transition hover:bg-white/20 dark:text-slate-100"
+            className={`${liquidGlassRadiusChip} px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-100 ${liquidGlassButtonClasses}`}
           >
             Retry
           </button>
@@ -901,11 +948,10 @@ function QuickNoteTextarea({
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder="Write your quick note..."
-      className="w-full resize-none rounded-xl border border-white/25 bg-white/15 p-3 text-sm leading-relaxed text-slate-900 outline-none transition placeholder:text-slate-700/60 focus:ring-2 dark:bg-black/20 dark:text-slate-100 dark:placeholder:text-slate-300/55"
+      className={`w-full resize-none p-3 text-sm leading-relaxed ${liquidGlassRadiusControl} ${liquidGlassInputClasses}`}
       style={
         {
           '--tw-ring-color': theme.accentSoftBg,
-          borderColor: 'rgba(255,255,255,0.25)',
         } as CSSProperties
       }
     />
@@ -916,30 +962,50 @@ function LiquidGlassFilterDefs() {
   return (
     <svg aria-hidden className="pointer-events-none absolute h-0 w-0">
       <defs>
+        {/*
+         * Apple-style Liquid Glass refraction + specular highlight.
+         *  - Finer noise + smaller displacement so the refraction is felt, not seen.
+         *  - Two soft specular lights (warm upper-left key + cool lower-right rim) — the
+         *    painterly highlight that makes Liquid Glass feel like a curved physical pane.
+         *  - Slight chromatic offset on the displacement gives the subtle dispersion that
+         *    Apple shows when content scrolls behind a glass surface.
+         */}
         <filter id="liquid-glass" x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.012 0.022" numOctaves={2} seed={7} result="liquid-noise" />
-          <feGaussianBlur in="liquid-noise" stdDeviation={1.1} result="liquid-noise-soft" />
+          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.014" numOctaves={2} seed={5} result="lg-noise" />
+          <feGaussianBlur in="lg-noise" stdDeviation={1.6} result="lg-noise-soft" />
           <feDisplacementMap
             in="SourceGraphic"
-            in2="liquid-noise-soft"
-            scale={18}
+            in2="lg-noise-soft"
+            scale={9}
             xChannelSelector="R"
             yChannelSelector="G"
-            result="liquid-refract"
+            result="lg-refract"
           />
-          <feGaussianBlur in="SourceAlpha" stdDeviation={2.2} result="liquid-alpha" />
+          <feGaussianBlur in="SourceAlpha" stdDeviation={2.6} result="lg-alpha" />
           <feSpecularLighting
-            in="liquid-alpha"
-            surfaceScale={3}
-            specularConstant={0.5}
-            specularExponent={24}
+            in="lg-alpha"
+            surfaceScale={4}
+            specularConstant={0.55}
+            specularExponent={28}
             lightingColor="#ffffff"
-            result="liquid-specular"
+            result="lg-specular-key"
           >
-            <fePointLight x={-120} y={-140} z={220} />
+            <fePointLight x={-160} y={-180} z={260} />
           </feSpecularLighting>
-          <feComposite in="liquid-specular" in2="SourceAlpha" operator="in" result="liquid-specular-clipped" />
-          <feBlend in="liquid-refract" in2="liquid-specular-clipped" mode="screen" />
+          <feSpecularLighting
+            in="lg-alpha"
+            surfaceScale={3}
+            specularConstant={0.18}
+            specularExponent={36}
+            lightingColor="#cfe1ff"
+            result="lg-specular-rim"
+          >
+            <fePointLight x={220} y={260} z={180} />
+          </feSpecularLighting>
+          <feComposite in="lg-specular-key" in2="SourceAlpha" operator="in" result="lg-key-clipped" />
+          <feComposite in="lg-specular-rim" in2="SourceAlpha" operator="in" result="lg-rim-clipped" />
+          <feBlend in="lg-refract" in2="lg-key-clipped" mode="screen" result="lg-key-blend" />
+          <feBlend in="lg-key-blend" in2="lg-rim-clipped" mode="screen" />
         </filter>
       </defs>
     </svg>
@@ -1065,19 +1131,21 @@ export default function App() {
     loadStoredCardVisibility(VISIBLE_DOCK_ITEMS_STORAGE_KEY, defaultDockItemVisibility),
   );
   const [cardContextMenu, setCardContextMenu] = useState<CardContextMenuState | null>(null);
+  const [wallpaperContextMenu, setWallpaperContextMenu] = useState<WallpaperContextMenuState | null>(null);
+  const [clockContextMenu, setClockContextMenu] = useState<ClockContextMenuState | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [preferences, setPreferences] = useState<Record<PreferenceId, boolean>>(() => loadStoredPreferences());
   const [clockSize, setClockSize] = useState<ClockSize>(() => loadStoredClockSize());
   const [clockPosition, setClockPosition] = useState<ClockPosition>(() => loadStoredClockPosition());
   const [now, setNow] = useState(() => new Date());
   const [selectedBackground, setSelectedBackground] = useState<BackgroundId>(() => {
-    if (typeof window === 'undefined') return 'ios-blue';
+    if (typeof window === 'undefined') return 'ios-indigo';
     const raw = window.localStorage.getItem(SELECTED_BACKGROUND_STORAGE_KEY);
-    if (!raw) return 'ios-blue';
+    if (!raw) return 'ios-indigo';
     if (raw === 'custom') {
-      return loadCustomWallpaperFromStorage() ? 'custom' : 'ios-blue';
+      return loadCustomWallpaperFromStorage() ? 'custom' : 'ios-indigo';
     }
-    return backgroundOptions.some((option) => option.id === raw) ? (raw as BackgroundId) : 'ios-blue';
+    return backgroundOptions.some((option) => option.id === raw) ? (raw as BackgroundId) : 'ios-indigo';
   });
   const [customWallpaper, setCustomWallpaper] = useState<CustomWallpaperMeta | null>(() =>
     loadCustomWallpaperFromStorage(),
@@ -1119,6 +1187,8 @@ export default function App() {
   const suppressAmbientVolumeSyncRef = useRef(false);
   const customWallpaperFileInputRef = useRef<HTMLInputElement | null>(null);
   const cardContextMenuRef = useRef<HTMLDivElement | null>(null);
+  const wallpaperContextMenuRef = useRef<HTMLDivElement | null>(null);
+  const clockContextMenuRef = useRef<HTMLDivElement | null>(null);
   const stopAmbientAudioRef = useRef<() => void>(() => {});
   const audioContextRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
@@ -1158,12 +1228,22 @@ export default function App() {
   }, [clockPosition]);
 
   useEffect(() => {
-    if (customWallpaper) {
-      window.localStorage.setItem(CUSTOM_WALLPAPER_META_STORAGE_KEY, JSON.stringify(customWallpaper));
-    } else {
-      window.localStorage.removeItem(CUSTOM_WALLPAPER_META_STORAGE_KEY);
+    try {
+      if (customWallpaper) {
+        window.localStorage.setItem(CUSTOM_WALLPAPER_META_STORAGE_KEY, JSON.stringify(customWallpaper));
+      } else {
+        window.localStorage.removeItem(CUSTOM_WALLPAPER_META_STORAGE_KEY);
+      }
+    } catch {
+      // Prevent storage quota errors from crashing the new tab page.
+      setCustomWallpaper(null);
+      if (selectedBackground === 'custom') {
+        setSelectedBackground('ios-indigo');
+        window.localStorage.setItem(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-indigo');
+      }
+      setCustomWallpaperError('Could not save this image. Please choose a smaller wallpaper.');
     }
-  }, [customWallpaper]);
+  }, [customWallpaper, selectedBackground]);
 
   const pomodoroTotalSeconds = pomodoroPhase === 'focus' ? POMODORO_FOCUS_SECONDS : POMODORO_BREAK_SECONDS;
   const pomodoroProgress = ((pomodoroTotalSeconds - pomodoroSecondsLeft) / pomodoroTotalSeconds) * 100;
@@ -1253,16 +1333,16 @@ export default function App() {
       <div className="space-y-1">
         <div className="flex items-end justify-between gap-2">
           <p className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{formattedPomodoroTime}</p>
-          <span className="rounded-full border border-white/35 bg-white/25 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-800 dark:text-slate-100">
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-800 dark:text-slate-100 ${liquidGlassChipClasses}`}>
             {pomodoroStatusLabel}
           </span>
         </div>
       </div>
 
       <div>
-        <div className="h-2 overflow-hidden rounded-full bg-black/15 dark:bg-white/15">
+        <div className={`h-2 overflow-hidden rounded-full ${liquidGlassRecessClasses}`}>
           <div
-            className="h-full rounded-full transition-[width] duration-500"
+            className="h-full rounded-full shadow-glass-edge transition-[width] duration-500"
             style={{
               width: `${Math.max(0, Math.min(100, pomodoroProgress))}%`,
               backgroundColor: activeTheme.accent,
@@ -1275,7 +1355,7 @@ export default function App() {
         <button
           type="button"
           onClick={() => setIsPomodoroRunning((prev) => !prev)}
-          className="rounded-lg border px-3 py-1.5 text-xs font-medium text-slate-900 transition dark:text-slate-100"
+          className={`${liquidGlassRadiusChip} border px-3 py-1.5 text-xs font-medium text-slate-900 shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed dark:text-slate-100`}
           style={{
             borderColor: activeTheme.accentSoftBorder,
             backgroundColor: activeTheme.accentSoftBg,
@@ -1286,14 +1366,14 @@ export default function App() {
         <button
           type="button"
           onClick={() => resetPomodoro(pomodoroPhase)}
-          className="rounded-lg border border-white/30 bg-white/15 px-3 py-1.5 text-xs font-medium text-slate-800 transition hover:bg-white/25 dark:text-slate-100"
+          className={`${liquidGlassRadiusChip} px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-100 ${liquidGlassButtonClasses}`}
         >
           Reset
         </button>
         <button
           type="button"
           onClick={() => resetPomodoro(pomodoroPhase === 'focus' ? 'break' : 'focus')}
-          className="rounded-lg border border-white/30 bg-white/15 px-3 py-1.5 text-xs font-medium text-slate-800 transition hover:bg-white/25 dark:text-slate-100"
+          className={`${liquidGlassRadiusChip} px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-100 ${liquidGlassButtonClasses}`}
         >
           Skip
         </button>
@@ -1322,7 +1402,7 @@ export default function App() {
             const d = new Date(v);
             if (!Number.isNaN(d.getTime())) setCountdownTargetIso(d.toISOString());
           }}
-          className="h-9 w-full rounded-lg border border-white/30 bg-white/15 px-3 text-sm text-slate-900 outline-none focus:ring-2 dark:bg-black/20 dark:text-slate-100"
+          className={`h-9 w-full px-3 text-sm ${liquidGlassRadiusChip} ${liquidGlassInputClasses}`}
           style={{ '--tw-ring-color': activeTheme.accentSoftBg } as CSSProperties}
         />
       </div>
@@ -1343,7 +1423,7 @@ export default function App() {
           ).map(([label, value]) => (
             <div
               key={label}
-              className="rounded-xl border border-white/25 bg-white/10 px-1 py-2 dark:bg-black/25"
+              className={`px-1 py-2 ${liquidGlassRadiusControl} ${liquidGlassThinClasses}`}
             >
               <p className="text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-100">{value}</p>
               <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-600 dark:text-slate-300/85">
@@ -1358,7 +1438,7 @@ export default function App() {
         <button
           type="button"
           onClick={() => setCountdownTargetIso('')}
-          className="rounded-lg border border-white/30 bg-white/15 px-3 py-1.5 text-xs font-medium text-slate-800 transition hover:bg-white/25 dark:text-slate-100"
+          className={`${liquidGlassRadiusChip} px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-100 ${liquidGlassButtonClasses}`}
         >
           Clear target
         </button>
@@ -1749,13 +1829,13 @@ export default function App() {
                   if (event.key === 'Enter') addTodoItem();
                 }}
                 placeholder="Add a task..."
-                className="h-9 flex-1 rounded-lg border border-white/30 bg-white/15 px-3 text-sm text-slate-900 outline-none placeholder:text-slate-700/65 focus:ring-2 dark:bg-black/20 dark:text-slate-100 dark:placeholder:text-slate-300/55"
+                className={`h-9 flex-1 px-3 text-sm ${liquidGlassRadiusChip} ${liquidGlassInputClasses}`}
                 style={{ '--tw-ring-color': activeTheme.accentSoftBg } as CSSProperties}
               />
               <button
                 type="button"
                 onClick={addTodoItem}
-                className="h-9 rounded-lg border px-3 text-xs font-medium transition"
+                className={`h-9 ${liquidGlassRadiusChip} border px-3 text-xs font-medium shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed`}
                 style={{
                   borderColor: activeTheme.accentSoftBorder,
                   backgroundColor: activeTheme.accentSoftBg,
@@ -1773,19 +1853,19 @@ export default function App() {
 
             <div className="hide-scrollbar max-h-52 space-y-1.5 overflow-y-auto pr-1">
               {todoItems.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-white/30 bg-white/10 px-3 py-3 text-xs text-slate-700/85 dark:text-slate-200/75">
+                <p className={`border-dashed px-3 py-3 text-xs text-slate-700/85 dark:text-slate-200/75 ${liquidGlassRadiusChip} ${liquidGlassThinClasses}`}>
                   No tasks yet. Add one to get started.
                 </p>
               ) : (
                 todoItems.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-2.5 py-2 dark:bg-black/15"
+                    className={`flex items-center gap-2 px-2.5 py-2 ${liquidGlassRadiusChip} ${liquidGlassThinClasses}`}
                   >
                     <button
                       type="button"
                       onClick={() => toggleTodoItem(item.id)}
-                      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border border-white/45 transition"
+                      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border border-white/45 shadow-glass-edge transition"
                       style={
                         item.completed
                           ? {
@@ -1811,7 +1891,7 @@ export default function App() {
                     <button
                       type="button"
                       onClick={() => deleteTodoItem(item.id)}
-                      className="rounded px-1.5 py-0.5 text-xs text-slate-700/80 transition hover:bg-white/20 hover:text-slate-900 dark:text-slate-200/80 dark:hover:text-slate-100"
+                      className="rounded-md px-1.5 py-0.5 text-xs text-slate-700/80 transition hover:bg-white/15 hover:text-slate-900 hover:shadow-glass-edge dark:text-slate-200/80 dark:hover:text-slate-100"
                       aria-label={`Delete task: ${item.text}`}
                       title="Delete task"
                     >
@@ -1827,7 +1907,7 @@ export default function App() {
                 type="button"
                 onClick={clearCompletedTodos}
                 disabled={completedTodoCount === 0}
-                className="rounded-lg border border-white/30 bg-white/12 px-3 py-1.5 text-[11px] font-medium text-slate-800 transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-45 dark:text-slate-100"
+                className={`${liquidGlassRadiusChip} px-3 py-1.5 text-[11px] font-medium text-slate-800 dark:text-slate-100 ${liquidGlassButtonClasses}`}
               >
                 Clear completed
               </button>
@@ -1897,7 +1977,7 @@ export default function App() {
                     return next;
                   });
                 }}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition hover:opacity-95"
+                className={`flex h-10 w-10 shrink-0 items-center justify-center ${liquidGlassRadiusControl} border shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed`}
                 style={{
                   borderColor: activeTheme.accentSoftBorder,
                   backgroundColor: activeTheme.accentSoftBg,
@@ -1937,8 +2017,10 @@ export default function App() {
                     key={id}
                     type="button"
                     onClick={() => setAmbientEnabled((prev) => ({ ...prev, [id]: !prev[id] }))}
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition ${
-                      on ? 'shadow-sm' : 'border-white/25 bg-white/10 hover:bg-white/15'
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center border transition ${liquidGlassRadiusControl} ${
+                      on
+                        ? 'shadow-glass-edge'
+                        : `${liquidGlassButtonClasses}`
                     }`}
                     style={
                       on
@@ -2042,14 +2124,59 @@ export default function App() {
       [cardId]: false,
     }));
   };
+  const closeAllWidgets = () => {
+    setPreferences((prev) => ({
+      ...prev,
+      showBookmarkBar: false,
+    }));
+    setVisibleCards((prev) => {
+      const next = { ...prev };
+      (Object.keys(next) as CardId[]).forEach((cardId) => {
+        next[cardId] = false;
+      });
+      return next;
+    });
+    setCardContextMenu(null);
+    setWallpaperContextMenu(null);
+    setClockContextMenu(null);
+  };
+  const toggleWallpaperPreference = (preferenceId: 'showBackgroundBlur' | 'showBackgroundDimmer') => {
+    setPreferences((prev) => ({
+      ...prev,
+      [preferenceId]: !prev[preferenceId],
+    }));
+  };
   const resetCardPosition = (cardId: CardId) => {
     updateCardPosition(cardId, defaultCardPositions[cardId]);
   };
   const openCardContextMenu = (cardId: CardId, event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
+    event.stopPropagation();
     bringCardToFront(cardId);
+    setWallpaperContextMenu(null);
     setCardContextMenu({
       cardId,
+      x: event.clientX,
+      y: event.clientY,
+    });
+  };
+  const openWallpaperContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    const target = event.target;
+    if (target instanceof Element && target.closest('[data-widget-card="true"]')) return;
+    event.preventDefault();
+    setCardContextMenu(null);
+    setClockContextMenu(null);
+    setWallpaperContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+    });
+  };
+  const openClockContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setCardContextMenu(null);
+    setWallpaperContextMenu(null);
+    setClockContextMenu({
       x: event.clientX,
       y: event.clientY,
     });
@@ -2203,19 +2330,29 @@ export default function App() {
   }, [updateDockScrollOverflow, visibleDockItems]);
 
   useEffect(() => {
-    if (!cardContextMenu) return;
+    if (!cardContextMenu && !wallpaperContextMenu && !clockContextMenu) return;
 
     const closeIfOutside = (event: PointerEvent) => {
       const target = event.target;
       if (!(target instanceof Node)) return;
       if (cardContextMenuRef.current?.contains(target)) return;
+      if (wallpaperContextMenuRef.current?.contains(target)) return;
+      if (clockContextMenuRef.current?.contains(target)) return;
       setCardContextMenu(null);
+      setWallpaperContextMenu(null);
+      setClockContextMenu(null);
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       setCardContextMenu(null);
+      setWallpaperContextMenu(null);
+      setClockContextMenu(null);
     };
-    const closeOnLayoutChange = () => setCardContextMenu(null);
+    const closeOnLayoutChange = () => {
+      setCardContextMenu(null);
+      setWallpaperContextMenu(null);
+      setClockContextMenu(null);
+    };
 
     window.addEventListener('pointerdown', closeIfOutside);
     window.addEventListener('keydown', closeOnEscape);
@@ -2229,7 +2366,7 @@ export default function App() {
       window.removeEventListener('blur', closeOnLayoutChange);
       window.removeEventListener('scroll', closeOnLayoutChange, true);
     };
-  }, [cardContextMenu]);
+  }, [cardContextMenu, clockContextMenu, wallpaperContextMenu]);
 
   const contextMenuCard = cardContextMenu ? cardItems.find((card) => card.id === cardContextMenu.cardId) ?? null : null;
   const contextMenuPosition = useMemo(() => {
@@ -2245,6 +2382,32 @@ export default function App() {
       top: Math.max(margin, top),
     };
   }, [cardContextMenu]);
+  const wallpaperContextMenuPosition = useMemo(() => {
+    if (!wallpaperContextMenu) return null;
+    if (typeof window === 'undefined') return { left: wallpaperContextMenu.x, top: wallpaperContextMenu.y };
+    const menuWidth = 224;
+    const menuHeight = 182;
+    const margin = 12;
+    const left = Math.min(wallpaperContextMenu.x, window.innerWidth - menuWidth - margin);
+    const top = Math.min(wallpaperContextMenu.y, window.innerHeight - menuHeight - margin);
+    return {
+      left: Math.max(margin, left),
+      top: Math.max(margin, top),
+    };
+  }, [wallpaperContextMenu]);
+  const clockContextMenuPosition = useMemo(() => {
+    if (!clockContextMenu) return null;
+    if (typeof window === 'undefined') return { left: clockContextMenu.x, top: clockContextMenu.y };
+    const menuWidth = 224;
+    const menuHeight = 190;
+    const margin = 12;
+    const left = Math.min(clockContextMenu.x, window.innerWidth - menuWidth - margin);
+    const top = Math.min(clockContextMenu.y, window.innerHeight - menuHeight - margin);
+    return {
+      left: Math.max(margin, left),
+      top: Math.max(margin, top),
+    };
+  }, [clockContextMenu]);
 
   const shouldShowDock = isDockVisible || isDockHovered || isSettingsOpen;
   const toggleFullscreen = async () => {
@@ -2290,6 +2453,11 @@ export default function App() {
         setCustomWallpaperError('Could not read image file.');
         return;
       }
+      if (result.length > MAX_CUSTOM_WALLPAPER_DATA_URL_LENGTH) {
+        setCustomWallpaperError('Image is too large to store. Please choose a smaller file.');
+        event.target.value = '';
+        return;
+      }
       setCustomWallpaperError(null);
       setCustomWallpaper({ url: result });
       setSelectedBackground('custom');
@@ -2307,19 +2475,26 @@ export default function App() {
     setCustomWallpaper(null);
     setCustomWallpaperError(null);
     if (selectedBackground === 'custom') {
-      setSelectedBackground('ios-blue');
-      window.localStorage.setItem(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-blue');
+      setSelectedBackground('ios-indigo');
+      window.localStorage.setItem(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-indigo');
     }
   }, [selectedBackground]);
-  const formattedTime = useMemo(
-    () =>
-      now.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }),
-    [now],
-  );
+  const formattedTime = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: !preferences.use24HourTime,
+    });
+    if (preferences.use24HourTime || preferences.showAmPm) {
+      return formatter.format(now);
+    }
+    return formatter
+      .formatToParts(now)
+      .filter((part) => part.type !== 'dayPeriod')
+      .map((part) => part.value)
+      .join('')
+      .trim();
+  }, [now, preferences.showAmPm, preferences.use24HourTime]);
   const formattedDate = useMemo(
     () =>
       now.toLocaleDateString([], {
@@ -2387,7 +2562,6 @@ export default function App() {
         return 'items-center text-center';
     }
   }, [clockPosition]);
-
   const wallpaperSettings = [
     {
       id: 'showBackgroundDimmer' as const,
@@ -2416,12 +2590,10 @@ export default function App() {
       label: 'Use 24-Hour Time',
       description: 'Switch between 12-hour and 24-hour clock format.',
     },
-  ];
-  const bookmarkSettings = [
     {
-      id: 'showBookmarkBar' as const,
-      label: 'Bookmarks bar',
-      description: 'Show the same bookmarks as Chrome’s bookmarks bar (top strip; folders open on click).',
+      id: 'showAmPm' as const,
+      label: 'Show AM/PM',
+      description: 'Show or hide AM/PM when 12-hour time is used.',
     },
   ];
   const dockVisibilitySettings = cardItems.map((card) => ({
@@ -2440,7 +2612,7 @@ export default function App() {
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-slate-950 text-slate-100">
       <LiquidGlassFilterDefs />
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {preferences.showBookmarkBar ? (
           <BookmarkBar
             key="bookmark-bar"
@@ -2458,41 +2630,37 @@ export default function App() {
           alt={activeBackground.name}
           className={`h-full w-full object-cover transition ${preferences.showBackgroundBlur ? 'blur-[3px] scale-[1.02]' : ''}`}
         />
-        {preferences.showBackgroundDimmer ? <div className="absolute inset-0 bg-slate-950/55" /> : null}
+        {preferences.showBackgroundDimmer ? <div className="absolute inset-0 bg-black/35" /> : null}
       </div>
 
       <section
         className={`relative h-full w-full px-5 pb-5 pt-5 ${isSettingsOpen ? 'z-[45]' : 'z-10'}`}
+        onContextMenu={openWallpaperContextMenu}
       >
         <div ref={dragBoundaryRef} className="relative h-full">
-          <AnimatePresence>
-            {preferences.showCenterTime ? (
-              <motion.div
-                initial={{ opacity: 0, y: 6, scale: 0.99 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 6, scale: 0.99 }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
-                className={clockPositionContainerClass}
+          {preferences.showCenterTime ? (
+            <div className={clockPositionContainerClass}>
+              <div
+                className={`pointer-events-auto flex flex-col ${clockStackAlignClass} ${clockDisplayClasses.gap}`}
+                onContextMenu={openClockContextMenu}
               >
-                <div className={`flex flex-col ${clockStackAlignClass} ${clockDisplayClasses.gap}`}>
+                <p
+                  className={`select-none font-semibold tracking-tight text-slate-100/95 drop-shadow-[0_3px_20px_rgba(0,0,0,0.45)] ${clockDisplayClasses.time}`}
+                >
+                  {formattedTime}
+                </p>
+                {preferences.showCenterDate ? (
                   <p
-                    className={`select-none font-semibold tracking-tight text-slate-100/95 drop-shadow-[0_3px_20px_rgba(0,0,0,0.45)] ${clockDisplayClasses.time}`}
+                    className={`select-none font-medium tracking-wide text-slate-100/85 drop-shadow-[0_2px_14px_rgba(0,0,0,0.35)] ${clockDisplayClasses.date}`}
                   >
-                    {formattedTime}
+                    {formattedDate}
                   </p>
-                  {preferences.showCenterDate ? (
-                    <p
-                      className={`select-none font-medium tracking-wide text-slate-100/85 drop-shadow-[0_2px_14px_rgba(0,0,0,0.35)] ${clockDisplayClasses.date}`}
-                    >
-                      {formattedDate}
-                    </p>
-                  ) : null}
-                </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
 
-          <AnimatePresence>
+          <AnimatePresence initial={false}>
             {cardItems.map((card) =>
               card.id !== 'bookmarks' && visibleCards[card.id] ? (
                 <motion.div
@@ -2513,7 +2681,7 @@ export default function App() {
                   }}
                 >
                   <GlassCard
-                    title={card.title}
+                    title={card.dockLabel}
                     className="w-full min-w-0"
                     position={cardPositions[card.id]}
                     dragBoundaryRef={dragBoundaryRef}
@@ -2544,23 +2712,33 @@ export default function App() {
                 />
                 <motion.aside
                   key="settings-panel"
-                  initial={{ x: 40, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: 40, opacity: 0 }}
+                  initial={{ x: 40 }}
+                  animate={{ x: 0 }}
+                  exit={{ x: 40 }}
                   transition={{ duration: 0.18, ease: 'easeOut' }}
                   className="fixed inset-y-3 right-3 z-30 isolate flex w-[26rem] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-2xl text-slate-100"
                 >
-                <div
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
                   className={`pointer-events-none absolute inset-0 z-0 ${chromeGlassSurfaceClasses} ${chromeGlassRadiusSettings}`}
                   aria-hidden
                 />
-                <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  className="relative z-10 flex min-h-0 flex-1 flex-col"
+                >
                 <div className="flex items-center justify-between border-b border-white/15 px-4 py-3">
                   <h2 className="text-sm font-semibold tracking-wide text-slate-100">Settings</h2>
                   <button
                     type="button"
                     onClick={() => setIsSettingsOpen(false)}
-                    className="rounded-lg border border-white/20 bg-white/10 p-1.5 text-slate-100 transition hover:bg-white/20"
+                    className={`p-1.5 text-slate-100 ${liquidGlassRadiusChip} ${liquidGlassButtonClasses}`}
                     aria-label="Close Settings"
                     title="Close Settings"
                   >
@@ -2587,17 +2765,17 @@ export default function App() {
                                 setSelectedTheme(theme.id);
                                 window.localStorage.setItem(SELECTED_THEME_STORAGE_KEY, theme.id);
                               }}
-                              className="rounded-xl border px-2 py-2 text-left text-xs transition"
+                              className={`px-2 py-2 text-left text-xs ${liquidGlassRadiusControl} ${liquidGlassButtonClasses}`}
                               style={{
-                                borderColor: isActive ? theme.accentSoftBorder : 'rgba(255,255,255,0.25)',
-                                backgroundColor: isActive ? theme.accentSoftBg : 'rgba(255,255,255,0.05)',
-                                color: isActive ? theme.accentText : 'rgba(226,232,240,0.9)',
-                                boxShadow: isActive ? `0 0 0 1px ${theme.accentSoftBorder}` : undefined,
+                                borderColor: isActive ? theme.accentSoftBorder : undefined,
+                                backgroundColor: isActive ? theme.accentSoftBg : undefined,
+                                color: isActive ? theme.accentText : undefined,
+                                boxShadow: isActive ? `0 0 0 1px ${theme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45), 0 1px 2px rgba(0,0,0,0.18)` : undefined,
                               }}
                               aria-label={`Select ${theme.name} theme color`}
                               title={`Select ${theme.name}`}
                             >
-                              <span className="mb-1 inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: theme.accent }} />
+                              <span className="mb-1 inline-block h-2.5 w-2.5 rounded-full shadow-glass-edge" style={{ backgroundColor: theme.accent }} />
                               <div>{theme.name}</div>
                             </button>
                           );
@@ -2606,8 +2784,8 @@ export default function App() {
                     </section>
                     <section className="space-y-2">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-200/80">Wallpaper</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {backgroundOptions.map((background) => {
+                      <div className="grid grid-cols-3 gap-2">
+                        {backgroundOptions.slice(0, 5).map((background) => {
                           const isActive = selectedBackground === background.id;
                           return (
                             <button
@@ -2617,15 +2795,13 @@ export default function App() {
                                 setSelectedBackground(background.id);
                                 window.localStorage.setItem(SELECTED_BACKGROUND_STORAGE_KEY, background.id);
                               }}
-                              className={`overflow-hidden rounded-xl border transition ${
-                                isActive ? 'ring-1' : 'border-white/25 hover:border-white/45'
-                              }`}
-                              style={isActive ? { borderColor: activeTheme.accentSoftBorder, boxShadow: `0 0 0 1px ${activeTheme.accentSoftBorder}` } : undefined}
+                              className={`overflow-hidden ${liquidGlassRadiusControl} ${liquidGlassButtonClasses}`}
+                              style={isActive ? { borderColor: activeTheme.accentSoftBorder, boxShadow: `0 0 0 1px ${activeTheme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45)` } : undefined}
                               aria-label={`Select ${background.name} background`}
                               title={`Select ${background.name}`}
                             >
                               <img src={background.imageUrl} alt={background.name} className="h-20 w-full object-cover" />
-                              <div className="border-t border-white/10 bg-black/35 px-2 py-1 text-left text-xs text-slate-100">
+                              <div className="rounded-b-xl border-t border-white/10 bg-glass-gradient-dark px-2 py-1 text-left text-xs text-slate-100 [backdrop-filter:blur(12px)_saturate(150%)] [-webkit-backdrop-filter:blur(12px)_saturate(150%)]">
                                 {background.name}
                               </div>
                             </button>
@@ -2640,12 +2816,10 @@ export default function App() {
                             setSelectedBackground('custom');
                             window.localStorage.setItem(SELECTED_BACKGROUND_STORAGE_KEY, 'custom');
                           }}
-                          className={`overflow-hidden rounded-xl border transition ${
-                            selectedBackground === 'custom' ? 'ring-1' : 'border-white/25 hover:border-white/45'
-                          } disabled:cursor-not-allowed disabled:opacity-50`}
+                          className={`overflow-hidden ${liquidGlassRadiusControl} ${liquidGlassButtonClasses}`}
                           style={
                             selectedBackground === 'custom'
-                              ? { borderColor: activeTheme.accentSoftBorder, boxShadow: `0 0 0 1px ${activeTheme.accentSoftBorder}` }
+                              ? { borderColor: activeTheme.accentSoftBorder, boxShadow: `0 0 0 1px ${activeTheme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45)` }
                               : undefined
                           }
                           aria-label="Use uploaded wallpaper"
@@ -2658,16 +2832,16 @@ export default function App() {
                               className="h-20 w-full object-cover"
                             />
                           ) : (
-                            <div className="flex h-20 w-full items-center justify-center bg-white/5 px-2 text-center text-[11px] text-slate-300/90">
+                            <div className="flex h-20 w-full items-center justify-center bg-glass-gradient-thin px-2 text-center text-[11px] text-slate-300/90">
                               Upload
                             </div>
                           )}
-                          <div className="border-t border-white/10 bg-black/35 px-2 py-1 text-left text-xs text-slate-100">
+                          <div className="rounded-b-xl border-t border-white/10 bg-glass-gradient-dark px-2 py-1 text-left text-xs text-slate-100 [backdrop-filter:blur(12px)_saturate(150%)] [-webkit-backdrop-filter:blur(12px)_saturate(150%)]">
                             Custom (uploaded)
                           </div>
                         </button>
                       </div>
-                      <div className="space-y-2 rounded-xl border border-white/15 bg-white/5 p-3">
+                      <div className={`space-y-2 p-3 ${liquidGlassRadiusControl} ${liquidGlassThinClasses}`}>
                         <p className="text-[11px] font-medium text-slate-200/85">Upload custom wallpaper</p>
                         <input
                           ref={customWallpaperFileInputRef}
@@ -2680,7 +2854,7 @@ export default function App() {
                           <button
                             type="button"
                             onClick={() => customWallpaperFileInputRef.current?.click()}
-                            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm text-slate-100 transition hover:bg-white/15"
+                            className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-2 text-sm text-slate-100 ${liquidGlassRadiusChip} ${liquidGlassButtonClasses}`}
                             style={{ '--tw-ring-color': activeTheme.accentSoftBg } as CSSProperties}
                           >
                             <ImagePlus size={16} />
@@ -2690,7 +2864,7 @@ export default function App() {
                             <button
                               type="button"
                               onClick={clearCustomWallpaper}
-                              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm text-slate-100 transition hover:bg-white/15"
+                              className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-2 text-sm text-slate-100 ${liquidGlassRadiusChip} ${liquidGlassButtonClasses}`}
                               style={{ '--tw-ring-color': activeTheme.accentSoftBg } as CSSProperties}
                             >
                               <Trash2 size={16} />
@@ -2723,7 +2897,9 @@ export default function App() {
                     </section>
                     <section className="space-y-2">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-200/80">Clock</p>
-                      {clockSettings.map((setting) => (
+                      {clockSettings
+                        .filter((setting) => !(setting.id === 'showAmPm' && preferences.use24HourTime))
+                        .map((setting) => (
                         <SettingToggle
                           key={setting.id}
                           label={setting.label}
@@ -2738,7 +2914,7 @@ export default function App() {
                           }
                         />
                       ))}
-                      <div className="rounded-xl border border-white/20 bg-white/10 p-3">
+                      <div className={`p-3 ${liquidGlassRadiusControl} ${liquidGlassThinClasses}`}>
                         <p className="mb-2 text-sm font-medium text-slate-100">Clock size</p>
                         <div className="grid grid-cols-3 gap-2">
                           {(
@@ -2754,12 +2930,12 @@ export default function App() {
                                 key={id}
                                 type="button"
                                 onClick={() => setClockSize(id)}
-                                className="rounded-lg border px-2 py-2 text-center text-xs font-medium transition"
+                                className={`px-2 py-2 text-center text-xs font-medium ${liquidGlassRadiusChip} ${liquidGlassButtonClasses}`}
                                 style={{
-                                  borderColor: isActive ? activeTheme.accentSoftBorder : 'rgba(255,255,255,0.25)',
-                                  backgroundColor: isActive ? activeTheme.accentSoftBg : 'rgba(255,255,255,0.05)',
-                                  color: isActive ? activeTheme.accentText : 'rgba(226,232,240,0.9)',
-                                  boxShadow: isActive ? `0 0 0 1px ${activeTheme.accentSoftBorder}` : undefined,
+                                  borderColor: isActive ? activeTheme.accentSoftBorder : undefined,
+                                  backgroundColor: isActive ? activeTheme.accentSoftBg : undefined,
+                                  color: isActive ? activeTheme.accentText : undefined,
+                                  boxShadow: isActive ? `0 0 0 1px ${activeTheme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45)` : undefined,
                                 }}
                                 aria-pressed={isActive}
                                 aria-label={`${label} center clock`}
@@ -2770,7 +2946,7 @@ export default function App() {
                           })}
                         </div>
                       </div>
-                      <div className="rounded-xl border border-white/20 bg-white/10 p-3">
+                      <div className={`p-3 ${liquidGlassRadiusControl} ${liquidGlassThinClasses}`}>
                         <p className="mb-2 text-sm font-medium text-slate-100">Clock position</p>
                         <div className="grid grid-cols-3 gap-2">
                           {CLOCK_POSITIONS.map((id) => {
@@ -2780,12 +2956,12 @@ export default function App() {
                                 key={id}
                                 type="button"
                                 onClick={() => setClockPosition(id)}
-                                className="rounded-lg border px-1.5 py-2 text-center text-[11px] font-medium leading-tight transition"
+                                className={`px-1.5 py-2 text-center text-[11px] font-medium leading-tight ${liquidGlassRadiusChip} ${liquidGlassButtonClasses}`}
                                 style={{
-                                  borderColor: isActive ? activeTheme.accentSoftBorder : 'rgba(255,255,255,0.25)',
-                                  backgroundColor: isActive ? activeTheme.accentSoftBg : 'rgba(255,255,255,0.05)',
-                                  color: isActive ? activeTheme.accentText : 'rgba(226,232,240,0.9)',
-                                  boxShadow: isActive ? `0 0 0 1px ${activeTheme.accentSoftBorder}` : undefined,
+                                  borderColor: isActive ? activeTheme.accentSoftBorder : undefined,
+                                  backgroundColor: isActive ? activeTheme.accentSoftBg : undefined,
+                                  color: isActive ? activeTheme.accentText : undefined,
+                                  boxShadow: isActive ? `0 0 0 1px ${activeTheme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45)` : undefined,
                                 }}
                                 aria-pressed={isActive}
                                 aria-label={`Place clock ${CLOCK_POSITION_LABELS[id]}`}
@@ -2797,24 +2973,6 @@ export default function App() {
                           })}
                         </div>
                       </div>
-                    </section>
-                    <section className="space-y-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-200/80">Bookmarks</p>
-                      {bookmarkSettings.map((setting) => (
-                        <SettingToggle
-                          key={setting.id}
-                          label={setting.label}
-                          description={setting.description}
-                          enabled={preferences[setting.id]}
-                          theme={activeTheme}
-                          onChange={() =>
-                            setPreferences((prev) => ({
-                              ...prev,
-                              [setting.id]: !prev[setting.id],
-                            }))
-                          }
-                        />
-                      ))}
                     </section>
                     <section className="space-y-2">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-200/80">Dock Items</p>
@@ -2831,7 +2989,7 @@ export default function App() {
                     </section>
                   </div>
                 </div>
-                </div>
+                </motion.div>
               </motion.aside>
               </>
             ) : null}
@@ -2895,9 +3053,9 @@ export default function App() {
                       key={card.id}
                       type="button"
                       onClick={() => toggleCard(card.id)}
-                      className={`flex min-w-[4.75rem] flex-col items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2.5 transition ${
+                      className={`flex min-w-[4.75rem] flex-col items-center justify-center gap-1.5 px-2.5 py-2.5 ${liquidGlassRadiusChip} ${
                         dockHasHorizontalOverflow ? 'shrink-0' : 'min-w-0 flex-1 basis-0'
-                      } ${isVisible ? '' : 'border-white/20 bg-white/5 text-slate-200/70 hover:bg-white/15'}`}
+                      } ${isVisible ? 'border shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed' : `text-slate-200/85 ${liquidGlassButtonClasses}`}`}
                       style={
                         isVisible
                           ? {
@@ -2920,13 +3078,13 @@ export default function App() {
                     </button>
                   );
                 })}
-                <div className="mx-1 w-px shrink-0 self-stretch bg-white/25" aria-hidden="true" />
+                <div className="mx-1 w-px shrink-0 self-stretch bg-white/25 shadow-[1px_0_0_rgba(0,0,0,0.18)]" aria-hidden="true" />
                 <button
                   type="button"
                   onClick={() => setIsSettingsOpen((prev) => !prev)}
-                  className={`flex min-w-[4.75rem] flex-col items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2.5 transition ${
+                  className={`flex min-w-[4.75rem] flex-col items-center justify-center gap-1.5 px-2.5 py-2.5 ${liquidGlassRadiusChip} ${
                     dockHasHorizontalOverflow ? 'shrink-0' : 'min-w-0 flex-1 basis-0'
-                  } ${isSettingsOpen ? '' : 'border-white/20 bg-white/5 text-slate-200/80 hover:bg-white/15'}`}
+                  } ${isSettingsOpen ? 'border shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed' : `text-slate-200/85 ${liquidGlassButtonClasses}`}`}
                   style={
                     isSettingsOpen
                       ? {
@@ -2950,9 +3108,9 @@ export default function App() {
                 <button
                   type="button"
                   onClick={toggleFullscreen}
-                  className={`flex min-w-[4.75rem] flex-col items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2.5 transition ${
+                  className={`flex min-w-[4.75rem] flex-col items-center justify-center gap-1.5 px-2.5 py-2.5 ${liquidGlassRadiusChip} ${
                     dockHasHorizontalOverflow ? 'shrink-0' : 'min-w-0 flex-1 basis-0'
-                  } ${isFullscreen ? '' : 'border-white/20 bg-white/5 text-slate-200/80 hover:bg-white/15'}`}
+                  } ${isFullscreen ? 'border shadow-glass-edge transition hover:shadow-glass-edge-lifted active:shadow-glass-edge-pressed' : `text-slate-200/85 ${liquidGlassButtonClasses}`}`}
                   style={
                     isFullscreen
                       ? {
@@ -3000,11 +3158,11 @@ export default function App() {
             <div
               ref={cardContextMenuRef}
               role="menu"
-              aria-label={`${contextMenuCard.title} options`}
-              className={`fixed z-[80] min-w-56 overflow-hidden rounded-xl border border-white/20 bg-slate-950/90 p-1.5 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl ${chromeGlassSurfaceClasses}`}
+              aria-label={`${contextMenuCard.dockLabel} options`}
+              className={`fixed z-[80] min-w-56 overflow-hidden p-1.5 ${liquidGlassRadiusControl} ${liquidGlassPopoverClasses}`}
               style={{ left: contextMenuPosition.left, top: contextMenuPosition.top }}
             >
-              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wide text-slate-300/80">{contextMenuCard.title}</div>
+              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wide text-slate-300/80">{contextMenuCard.dockLabel}</div>
               <button
                 type="button"
                 role="menuitem"
@@ -3012,7 +3170,7 @@ export default function App() {
                   bringCardToFront(contextMenuCard.id);
                   setCardContextMenu(null);
                 }}
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12"
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
               >
                 Bring to front
               </button>
@@ -3023,7 +3181,7 @@ export default function App() {
                   resetCardPosition(contextMenuCard.id);
                   setCardContextMenu(null);
                 }}
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12"
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
               >
                 Reset position
               </button>
@@ -3034,9 +3192,121 @@ export default function App() {
                   closeCard(contextMenuCard.id);
                   setCardContextMenu(null);
                 }}
-                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-rose-200 transition hover:bg-rose-500/20"
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-rose-200 transition hover:bg-rose-500/20 hover:shadow-glass-edge"
               >
                 Close
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
+      {wallpaperContextMenu && wallpaperContextMenuPosition
+        ? createPortal(
+            <div
+              ref={wallpaperContextMenuRef}
+              role="menu"
+              aria-label="Wallpaper options"
+              className={`fixed z-[80] min-w-56 overflow-hidden p-1.5 ${liquidGlassRadiusControl} ${liquidGlassPopoverClasses}`}
+              style={{ left: wallpaperContextMenuPosition.left, top: wallpaperContextMenuPosition.top }}
+            >
+              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wide text-slate-300/80">Wallpaper</div>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={closeAllWidgets}
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-rose-200 transition hover:bg-rose-500/20 hover:shadow-glass-edge"
+              >
+                Close all widgets
+              </button>
+              <button
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={preferences.showBackgroundBlur}
+                onClick={() => toggleWallpaperPreference('showBackgroundBlur')}
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+              >
+                <span>{preferences.showBackgroundBlur ? 'Disable blur' : 'Enable blur'}</span>
+              </button>
+              <button
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={preferences.showBackgroundDimmer}
+                onClick={() => toggleWallpaperPreference('showBackgroundDimmer')}
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+              >
+                <span>{preferences.showBackgroundDimmer ? 'Disable dim background' : 'Enable dim background'}</span>
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
+      {clockContextMenu && clockContextMenuPosition
+        ? createPortal(
+            <div
+              ref={clockContextMenuRef}
+              role="menu"
+              aria-label="Clock options"
+              className={`fixed z-[80] min-w-56 overflow-hidden p-1.5 ${liquidGlassRadiusControl} ${liquidGlassPopoverClasses}`}
+              style={{ left: clockContextMenuPosition.left, top: clockContextMenuPosition.top }}
+            >
+              <div className="px-2 py-1.5 text-[11px] uppercase tracking-wide text-slate-300/80">Clock</div>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={!preferences.use24HourTime}
+                onClick={() =>
+                  setPreferences((prev) => ({
+                    ...prev,
+                    use24HourTime: false,
+                  }))
+                }
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+              >
+                <span>Use 12-hour format</span>
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={preferences.use24HourTime}
+                onClick={() =>
+                  setPreferences((prev) => ({
+                    ...prev,
+                    use24HourTime: true,
+                  }))
+                }
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+              >
+                <span>Use 24-hour format</span>
+              </button>
+              <button
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={preferences.showAmPm}
+                aria-disabled={preferences.use24HourTime}
+                disabled={preferences.use24HourTime}
+                onClick={() =>
+                  setPreferences((prev) => ({
+                    ...prev,
+                    showAmPm: !prev.showAmPm,
+                  }))
+                }
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:shadow-none"
+              >
+                <span>{preferences.showAmPm ? 'Hide AM/PM' : 'Show AM/PM'}</span>
+              </button>
+              <button
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={preferences.showCenterDate}
+                onClick={() =>
+                  setPreferences((prev) => ({
+                    ...prev,
+                    showCenterDate: !prev.showCenterDate,
+                  }))
+                }
+                className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm text-slate-100 transition hover:bg-white/12 hover:shadow-glass-edge"
+              >
+                <span>{preferences.showCenterDate ? 'Hide date' : 'Show date'}</span>
               </button>
             </div>,
             document.body,
