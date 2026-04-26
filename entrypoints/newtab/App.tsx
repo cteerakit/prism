@@ -1403,7 +1403,7 @@ export default function App() {
         title: 'Pomodoro Timer',
         dockLabel: 'Timer',
         dockIcon: <Timer size={20} />,
-        className: 'absolute left-6 top-6 w-[20rem]',
+        className: 'absolute left-6 top-6 w-[22rem]',
         content: timerCardContent,
       },
       {
@@ -1411,7 +1411,7 @@ export default function App() {
         title: 'Countdown',
         dockLabel: 'Countdown',
         dockIcon: <CalendarClock size={20} />,
-        className: 'absolute left-6 top-[22rem] w-[20rem]',
+        className: 'absolute left-6 top-[22rem] w-[22rem]',
         content: countdownCardContent,
       },
       {
@@ -1419,7 +1419,7 @@ export default function App() {
         title: 'Live Music',
         dockLabel: 'Music',
         dockIcon: <Music2 size={20} />,
-        className: 'absolute right-[24rem] top-[20rem] w-[24rem]',
+        className: 'absolute right-[24rem] top-[20rem] w-[22rem]',
         content: <LofiMusicCard theme={activeTheme} />,
       },
       {
@@ -1427,7 +1427,7 @@ export default function App() {
         title: 'Bookmarks Bar',
         dockLabel: 'Bookmarks',
         dockIcon: <Bookmark size={20} />,
-        className: 'absolute left-0 top-0 w-[20rem]',
+        className: 'absolute left-0 top-0 w-[22rem]',
         content: null,
       },
       {
@@ -1435,7 +1435,7 @@ export default function App() {
         title: 'Ambient Audio Mixer',
         dockLabel: 'Sound',
         dockIcon: <Music2 size={20} />,
-        className: 'absolute left-[10rem] top-[20rem] w-[24rem]',
+        className: 'absolute left-[10rem] top-[20rem] w-[22rem]',
         content: (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
