@@ -1,0 +1,18 @@
+---
+description: Enforce true geometric centering by default
+alwaysApply: true
+---
+
+# True Centering Defaults
+
+When the user asks to "center" an element, interpret this as exact geometric center on the target axis/axes, not visual approximation.
+
+- Use center anchoring/pivot/origin when available.
+- If absolute/fixed positioning is used, offset by half size (`50%` + `translate(-50%, -50%)`) so the element center lands at the container center.
+- For one-axis requests, only center that axis (`x` or `y`) and preserve the other axis.
+- Prefer robust centering primitives first:
+  - CSS layout: `display: grid; place-items: center;` or flex equivalents.
+  - Absolute/fixed fallback: `left: 50%; top: 50%; transform: translate(-50%, -50%);`
+- Do not use hardcoded pixel nudges unless the user explicitly asks for optical adjustment.
+
+Before finalizing, verify there is no rightward/downward bias from top-left anchoring.
