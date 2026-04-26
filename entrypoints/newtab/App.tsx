@@ -610,13 +610,13 @@ export default function App() {
   const [clockPosition, setClockPosition] = useState<ClockPosition>(() => loadStoredClockPosition());
   const [now, setNow] = useState(() => new Date());
   const [selectedBackground, setSelectedBackground] = useState<BackgroundId>(() => {
-    if (typeof window === 'undefined') return 'ios-indigo';
+    if (typeof window === 'undefined') return 'ios-blue';
     const raw = readText(SELECTED_BACKGROUND_STORAGE_KEY);
-    if (!raw) return 'ios-indigo';
+    if (!raw) return 'ios-blue';
     if (raw === 'custom') {
-      return loadCustomWallpaperFromStorage() ? 'custom' : 'ios-indigo';
+      return loadCustomWallpaperFromStorage() ? 'custom' : 'ios-blue';
     }
-    return backgroundOptions.some((option) => option.id === raw) ? (raw as BackgroundId) : 'ios-indigo';
+    return backgroundOptions.some((option) => option.id === raw) ? (raw as BackgroundId) : 'ios-blue';
   });
   const [customWallpaper, setCustomWallpaper] = useState<CustomWallpaperMeta | null>(() =>
     loadCustomWallpaperFromStorage(),
@@ -709,8 +709,8 @@ export default function App() {
       // Prevent storage quota errors from crashing the new tab page.
       setCustomWallpaper(null);
       if (selectedBackground === 'custom') {
-        setSelectedBackground('ios-indigo');
-        writeText(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-indigo');
+        setSelectedBackground('ios-blue');
+        writeText(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-blue');
       }
       setCustomWallpaperError('Could not save this image. Please choose a smaller wallpaper.');
     }
@@ -1965,8 +1965,8 @@ export default function App() {
     setCustomWallpaper(null);
     setCustomWallpaperError(null);
     if (selectedBackground === 'custom') {
-      setSelectedBackground('ios-indigo');
-      writeText(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-indigo');
+      setSelectedBackground('ios-blue');
+      writeText(SELECTED_BACKGROUND_STORAGE_KEY, 'ios-blue');
     }
   }, [selectedBackground]);
   const formattedTime = useMemo(() => {
@@ -2121,7 +2121,7 @@ export default function App() {
           alt={activeBackground.name}
           className={`h-full w-full object-cover transition ${preferences.showBackgroundBlur ? 'blur-[3px] scale-[1.02]' : ''}`}
         />
-        {preferences.showBackgroundDimmer ? <div className="absolute inset-0 bg-black/35" /> : null}
+        {preferences.showBackgroundDimmer ? <div className="absolute inset-0 bg-black/25" /> : null}
       </div>
 
       <section
@@ -2257,7 +2257,7 @@ export default function App() {
                                 borderColor: isActive ? theme.accentSoftBorder : undefined,
                                 backgroundColor: isActive ? theme.accentSoftBg : undefined,
                                 color: isActive ? theme.accentText : undefined,
-                                boxShadow: isActive ? `0 0 0 1px ${theme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45), 0 1px 2px rgba(0,0,0,0.18)` : undefined,
+                                boxShadow: isActive ? 'inset 0 1px 0 rgba(255,255,255,0.45), 0 1px 2px rgba(0,0,0,0.18)' : undefined,
                               }}
                               aria-label={`Select ${theme.name} theme color`}
                               title={`Select ${theme.name}`}
@@ -2283,7 +2283,7 @@ export default function App() {
                                 writeText(SELECTED_BACKGROUND_STORAGE_KEY, background.id);
                               }}
                               className={`overflow-hidden ${liquidGlassRadiusControl} ${liquidGlassButtonClasses}`}
-                              style={isActive ? { borderColor: activeTheme.accentSoftBorder, boxShadow: `0 0 0 1px ${activeTheme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45)` } : undefined}
+                              style={isActive ? { borderColor: activeTheme.accentSoftBorder, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)' } : undefined}
                               aria-label={`Select ${background.name} background`}
                               title={`Select ${background.name}`}
                             >
@@ -2306,7 +2306,7 @@ export default function App() {
                           className={`overflow-hidden ${liquidGlassRadiusControl} ${liquidGlassButtonClasses}`}
                           style={
                             selectedBackground === 'custom'
-                              ? { borderColor: activeTheme.accentSoftBorder, boxShadow: `0 0 0 1px ${activeTheme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45)` }
+                              ? { borderColor: activeTheme.accentSoftBorder, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)' }
                               : undefined
                           }
                           aria-label="Use uploaded wallpaper"
@@ -2422,7 +2422,7 @@ export default function App() {
                                   borderColor: isActive ? activeTheme.accentSoftBorder : undefined,
                                   backgroundColor: isActive ? activeTheme.accentSoftBg : undefined,
                                   color: isActive ? activeTheme.accentText : undefined,
-                                  boxShadow: isActive ? `0 0 0 1px ${activeTheme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45)` : undefined,
+                                  boxShadow: isActive ? 'inset 0 1px 0 rgba(255,255,255,0.45)' : undefined,
                                 }}
                                 aria-pressed={isActive}
                                 aria-label={`${label} center clock`}
@@ -2448,7 +2448,7 @@ export default function App() {
                                   borderColor: isActive ? activeTheme.accentSoftBorder : undefined,
                                   backgroundColor: isActive ? activeTheme.accentSoftBg : undefined,
                                   color: isActive ? activeTheme.accentText : undefined,
-                                  boxShadow: isActive ? `0 0 0 1px ${activeTheme.accentSoftBorder}, inset 0 1px 0 rgba(255,255,255,0.45)` : undefined,
+                                  boxShadow: isActive ? 'inset 0 1px 0 rgba(255,255,255,0.45)' : undefined,
                                 }}
                                 aria-pressed={isActive}
                                 aria-label={`Place clock ${CLOCK_POSITION_LABELS[id]}`}
@@ -2489,9 +2489,9 @@ export default function App() {
               transition={{ duration: 0.14, ease: 'easeOut' }}
             >
               <div
-                className={`isolate flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-slate-200/90 ${chromeGlassSurfaceClasses}`}
+                className={`isolate flex h-8 w-8 items-center justify-center overflow-hidden text-slate-200/75 leading-none ${liquidGlassRadiusChip} ${liquidGlassButtonClasses} [&>svg]:block [&>svg]:shrink-0`}
               >
-                <ChevronUp size={16} />
+                <ChevronUp size={14} strokeWidth={1.75} />
               </div>
             </motion.div>
           </div>

@@ -229,14 +229,14 @@ function makeGradientWallpaper(stops: string[]): string {
 
 export const backgroundOptions: Array<{ id: BackgroundId; name: string; imageUrl: string }> = [
   {
-    id: 'ios-indigo',
-    name: 'Indigo Horizon',
-    imageUrl: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1920&q=80',
-  },
-  {
     id: 'ios-blue',
     name: 'Blue Nebula',
     imageUrl: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1920&q=80',
+  },
+  {
+    id: 'ios-indigo',
+    name: 'Indigo Horizon',
+    imageUrl: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1920&q=80',
   },
   {
     id: 'ios-purple',

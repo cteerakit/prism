@@ -417,6 +417,10 @@ export function BookmarkBar({ theme }: { theme: BookmarkBarTheme }) {
   const onScrollRowPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const target = e.target as Element | null;
+    // Do not start horizontal grab-scrolling from interactive controls.
+    // Otherwise folder buttons/links can lose their click after slight pointer movement.
+    if (target?.closest('a, button, input, textarea, select, label, [role="button"]')) return;
     const el = scrollRowRef.current;
     if (!el || el.scrollWidth <= el.clientWidth) return;
     grabPointerId.current = e.pointerId;
